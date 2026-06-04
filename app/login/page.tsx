@@ -2,188 +2,237 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { User, Lock, Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
 
+/* ── Escudo hexagonal com raio ── */
+function Crest({ size = 84 }: { size?: number }) {
+  return (
+    <div style={{ width: size, height: size, flexShrink: 0, filter: "drop-shadow(0 10px 22px rgba(0,0,0,.22))" }}>
+      <div style={{
+        width: "100%", height: "100%",
+        background: "linear-gradient(150deg, var(--primary) 0%, var(--primary-strong) 100%)",
+        clipPath: "polygon(50% 0, 100% 18%, 100% 62%, 50% 100%, 0 62%, 0 18%)",
+        display: "grid", placeItems: "center",
+      }}>
+        <svg width={size * 0.42} height={size * 0.42} viewBox="0 0 24 24" fill="var(--on-primary)" stroke="none">
+          <path d="M13 3 5 13h6l-1 8 8-10h-6l1-8Z" />
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+/* ── Campo de input ── */
+function Field({
+  label, iconPath, value, onChange, placeholder,
+  type = "text", trailing, error, autoFocus,
+}: {
+  label: string; iconPath: string; value: string;
+  onChange: (v: string) => void; placeholder: string;
+  type?: string; trailing?: React.ReactNode;
+  error?: boolean; autoFocus?: boolean;
+}) {
+  const [focus, setFocus] = useState(false);
+  return (
+    <label style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+      <span style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: 0.6, textTransform: "uppercase", color: "var(--ink-2)" }}>
+        {label}
+      </span>
+      <div style={{
+        display: "flex", alignItems: "center", gap: 10, padding: "0 12px", height: 52,
+        background: "var(--surface)", borderRadius: 14,
+        border: `1.6px solid ${error ? "var(--live)" : focus ? "var(--primary-strong)" : "var(--line-strong)"}`,
+        boxShadow: focus && !error ? "0 0 0 3px var(--primary-soft)" : "none",
+        transition: "all .14s",
+      }}>
+        <svg width={19} height={19} viewBox="0 0 24 24" fill="none"
+          stroke={error ? "var(--live)" : "var(--ink-3)"} strokeWidth={1.9}
+          strokeLinecap="round" strokeLinejoin="round">
+          <path d={iconPath} />
+        </svg>
+        <input
+          type={type} value={value} placeholder={placeholder} autoFocus={autoFocus}
+          onChange={(e) => onChange(e.target.value)}
+          onFocus={() => setFocus(true)} onBlur={() => setFocus(false)}
+          style={{
+            flex: 1, minWidth: 0, border: "none", outline: "none",
+            background: "transparent", fontFamily: "Archivo, sans-serif",
+            fontSize: 15.5, fontWeight: 500, color: "var(--ink)",
+            letterSpacing: type === "password" ? 3 : 0,
+          }}
+        />
+        {trailing}
+      </div>
+    </label>
+  );
+}
+
+/* ── Formulário (compartilhado mobile + desktop) ── */
+function LoginForm({ error, onSubmit }: { error: boolean; onSubmit: (u: string, p: string) => void }) {
+  const [user, setUser] = useState("");
+  const [pass, setPass] = useState("");
+  const [show, setShow] = useState(false);
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    onSubmit(user, pass);
+  }
+
+  return (
+    <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <Field
+        label="Usuário de rede"
+        iconPath="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"
+        value={user} onChange={setUser} placeholder="nome.sobrenome" autoFocus
+      />
+      <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+        <Field
+          label="Senha"
+          iconPath="M18 11V8a6 6 0 0 0-12 0v3M5 11h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Z"
+          type={show ? "text" : "password"}
+          value={pass} onChange={setPass} placeholder="••••••••" error={error}
+          trailing={
+            <button type="button" onClick={() => setShow((s) => !s)}
+              style={{ border: "none", background: "transparent", cursor: "pointer", padding: 4, display: "grid", placeItems: "center", color: "var(--ink-3)" }}>
+              {show ? <EyeOff size={19} strokeWidth={1.8} /> : <Eye size={19} strokeWidth={1.8} />}
+            </button>
+          }
+        />
+        {error && (
+          <span style={{ fontSize: 12.5, fontWeight: 600, color: "var(--live)", display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ width: 15, height: 15, borderRadius: "50%", background: "var(--live)", color: "#fff", display: "grid", placeItems: "center", fontSize: 11, fontWeight: 800 }}>!</span>
+            Usuário ou senha incorretos. Tente de novo.
+          </span>
+        )}
+      </div>
+
+      <button type="submit" style={{
+        height: 54, marginTop: 4, border: "none", borderRadius: 14,
+        background: "var(--primary)", color: "var(--on-primary)",
+        fontFamily: "Archivo, sans-serif", fontWeight: 800, fontSize: 16,
+        cursor: "pointer", boxShadow: "0 5px 0 var(--primary-strong)",
+        display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+      }}>
+        Entrar
+        <svg width={19} height={19} viewBox="0 0 24 24" fill="none"
+          stroke="var(--on-primary)" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M5 12h14M13 6l6 6-6 6" />
+        </svg>
+      </button>
+
+      <div style={{ textAlign: "center", fontSize: 13, color: "var(--ink-2)", marginTop: 2 }}>
+        Problemas pra entrar? <b style={{ color: "var(--ink)" }}>Fale com o ADM.</b>
+      </div>
+    </form>
+  );
+}
+
+/* ── Mobile ── */
+function LoginMobile({ error, onSubmit }: { error: boolean; onSubmit: (u: string, p: string) => void }) {
+  return (
+    <div style={{ minHeight: "100%", display: "flex", flexDirection: "column", background: "var(--app-bg)", color: "var(--ink)", fontFamily: "Archivo, sans-serif", position: "relative" }}>
+      {/* banda de marca */}
+      <div style={{ background: "var(--hero-bg)", color: "var(--hero-ink)", padding: "92px 26px 40px", position: "relative", overflow: "hidden", flexShrink: 0 }}>
+        <div style={{ position: "absolute", inset: 0, opacity: 0.5, background: "repeating-linear-gradient(115deg, transparent 0 26px, var(--hero-stripe) 26px 27px)", pointerEvents: "none" }} />
+        <div style={{ position: "relative", display: "flex", flexDirection: "column", alignItems: "center", gap: 16, textAlign: "center" }}>
+          <Crest size={78} />
+          <div>
+            <div style={{ fontFamily: "Anton, sans-serif", fontSize: 44, letterSpacing: 0.5, lineHeight: 0.92 }}>
+              <span>BORA</span><span style={{ color: "var(--primary)" }}>COPA</span>
+            </div>
+            <div style={{ fontSize: 13.5, color: "var(--hero-dim)", marginTop: 8, fontWeight: 500 }}>
+              o bolão da firma · Copa 2026
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* card sobreposto */}
+      <div style={{ flex: 1, marginTop: -22, position: "relative", zIndex: 2 }}>
+        <div style={{ background: "var(--app-bg)", borderRadius: "24px 24px 0 0", padding: "26px 22px 24px" }}>
+          <h2 style={{ margin: "0 0 18px", fontFamily: "Anton, sans-serif", fontSize: 23, letterSpacing: 0.3 }}>
+            Entrar
+          </h2>
+          <LoginForm error={error} onSubmit={onSubmit} />
+        </div>
+      </div>
+
+      <div style={{ textAlign: "center", fontSize: 11, color: "var(--ink-3)", padding: "6px 0 26px", fontWeight: 600 }}>
+        Acesso com sua conta da rede interna · v1.0
+      </div>
+    </div>
+  );
+}
+
+/* ── Desktop (split) ── */
+function LoginDesktop({ error, onSubmit }: { error: boolean; onSubmit: (u: string, p: string) => void }) {
+  return (
+    <div style={{ height: "100%", display: "flex", background: "var(--app-bg)", color: "var(--ink)", fontFamily: "Archivo, sans-serif" }}>
+      {/* painel esquerdo */}
+      <div style={{ width: "46%", background: "var(--hero-bg)", color: "var(--hero-ink)", padding: "48px 46px", position: "relative", overflow: "hidden", display: "flex", flexDirection: "column" }}>
+        <div style={{ position: "absolute", inset: 0, opacity: 0.5, background: "repeating-linear-gradient(115deg, transparent 0 30px, var(--hero-stripe) 30px 31px)", pointerEvents: "none" }} />
+        <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 12 }}>
+          <Crest size={46} />
+          <div style={{ fontFamily: "Anton, sans-serif", fontSize: 26, letterSpacing: 0.5 }}>
+            <span>BORA</span><span style={{ color: "var(--primary)" }}>COPA</span>
+          </div>
+        </div>
+        <div style={{ position: "relative", marginTop: "auto" }}>
+          <div style={{ fontFamily: "Anton, sans-serif", fontSize: 46, lineHeight: 0.98, letterSpacing: 0.4 }}>
+            O BOLÃO DA<br />FIRMA NA<br /><span style={{ color: "var(--primary)" }}>COPA 2026</span>
+          </div>
+          <div style={{ fontSize: 15, color: "var(--hero-dim)", marginTop: 16, maxWidth: 320, lineHeight: 1.5 }}>
+            Palpite nos jogos, crave o placar e suba no ranking dos colegas. Entra com sua conta da rede — sem cadastro.
+          </div>
+          <div style={{ display: "flex", gap: 22, marginTop: 28 }}>
+            {([["64", "jogos"], ["128", "no bolão"], ["+5", "cravada"]] as const).map(([v, k]) => (
+              <div key={k}>
+                <div style={{ fontFamily: "Anton, sans-serif", fontSize: 30, color: "var(--hero-ink)", lineHeight: 1 }}>{v}</div>
+                <div style={{ fontSize: 12, color: "var(--hero-dim)", fontWeight: 600, marginTop: 2 }}>{k}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* formulário direito */}
+      <div style={{ flex: 1, display: "grid", placeItems: "center", padding: 40 }}>
+        <div style={{ width: "100%", maxWidth: 360 }}>
+          <h1 style={{ margin: "0 0 4px", fontFamily: "Anton, sans-serif", fontSize: 30, letterSpacing: 0.3 }}>
+            Bem-vindo de volta
+          </h1>
+          <p style={{ margin: "0 0 26px", fontSize: 14, color: "var(--ink-2)" }}>
+            Entre para palpitar a próxima rodada.
+          </p>
+          <LoginForm error={error} onSubmit={onSubmit} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Page ── */
 export default function LoginPage() {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState(false);
   const login = useAuthStore((s) => s.login);
   const router = useRouter();
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  function handleSubmit(username: string, password: string) {
     const ok = login(username, password);
-    if (ok) {
-      router.replace("/home");
-    } else {
-      setError(true);
-    }
+    if (ok) router.replace("/home");
+    else setError(true);
   }
 
   return (
-    <div className="min-h-full flex flex-col lg:flex-row">
-      {/* Banda de marca */}
-      <div
-        className="flex flex-col items-center justify-center gap-4 px-8 py-12 lg:w-[46%] lg:min-h-full relative overflow-hidden"
-        style={{ background: "var(--hero-bg)" }}
-      >
-        {/* textura de listras */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            backgroundImage:
-              "repeating-linear-gradient(135deg, var(--hero-stripe) 0px, var(--hero-stripe) 1px, transparent 1px, transparent 24px)",
-          }}
-        />
-        {/* escudo */}
-        <div
-          className="relative z-10 w-16 h-16 flex items-center justify-center rounded-2xl text-2xl font-display"
-          style={{ background: "var(--primary)", color: "var(--on-primary)" }}
-        >
-          ⚽
-        </div>
-        {/* wordmark */}
-        <div className="relative z-10 font-display text-5xl tracking-wide uppercase leading-none">
-          <span style={{ color: "var(--hero-ink)" }}>BORA</span>
-          <span style={{ color: "var(--primary)" }}>COPA</span>
-        </div>
-        <p
-          className="relative z-10 text-sm tracking-widest uppercase"
-          style={{ color: "var(--hero-dim)" }}
-        >
-          o bolão da firma · Copa 2026
-        </p>
-
-        {/* stats — desktop only */}
-        <div className="relative z-10 hidden lg:flex gap-10 mt-8">
-          {[
-            { n: "32", label: "Participantes" },
-            { n: "64", label: "Jogos" },
-            { n: "+5", label: "Pts placar cravado" },
-          ].map(({ n, label }) => (
-            <div key={label} className="text-center">
-              <div
-                className="font-display text-3xl tracking-wide"
-                style={{ color: "var(--hero-ink)" }}
-              >
-                {n}
-              </div>
-              <div className="text-xs mt-1" style={{ color: "var(--hero-dim)" }}>
-                {label}
-              </div>
-            </div>
-          ))}
-        </div>
+    <div className="h-full">
+      {/* mobile */}
+      <div className="lg:hidden h-full">
+        <LoginMobile error={error} onSubmit={handleSubmit} />
       </div>
-
-      {/* Formulário */}
-      <div className="flex flex-1 items-center justify-center px-6 py-10 bg-app-bg lg:bg-surface">
-        <div
-          className="w-full max-w-sm rounded-3xl rounded-tl-3xl p-8"
-          style={{ background: "var(--surface)" }}
-        >
-          <h1
-            className="text-2xl font-bold mb-6"
-            style={{ color: "var(--ink)" }}
-          >
-            Entrar
-          </h1>
-
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            {/* Usuário */}
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium" style={{ color: "var(--ink-2)" }}>
-                Usuário de rede
-              </label>
-              <div
-                className="flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors"
-                style={{
-                  border: `1.5px solid ${error ? "var(--live)" : "var(--line-strong)"}`,
-                }}
-              >
-                <User size={16} style={{ color: "var(--ink-3)" }} />
-                <input
-                  type="text"
-                  autoComplete="username"
-                  value={username}
-                  onChange={(e) => { setUsername(e.target.value); setError(false); }}
-                  className="flex-1 bg-transparent outline-none text-sm"
-                  style={{ color: "var(--ink)" }}
-                  placeholder="seu.usuario"
-                />
-              </div>
-            </div>
-
-            {/* Senha */}
-            <div className="flex flex-col gap-1">
-              <label className="text-sm font-medium" style={{ color: "var(--ink-2)" }}>
-                Senha
-              </label>
-              <div
-                className="flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors"
-                style={{
-                  border: `1.5px solid ${error ? "var(--live)" : "var(--line-strong)"}`,
-                }}
-              >
-                <Lock size={16} style={{ color: "var(--ink-3)" }} />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => { setPassword(e.target.value); setError(false); }}
-                  className="flex-1 bg-transparent outline-none text-sm"
-                  style={{ color: "var(--ink)" }}
-                  placeholder="••••••••"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  className="p-0.5"
-                  style={{ color: "var(--ink-3)" }}
-                >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
-              {error && (
-                <p className="text-xs mt-1" style={{ color: "var(--live)" }}>
-                  Usuário ou senha incorretos.
-                </p>
-              )}
-            </div>
-
-            {/* Botão */}
-            <button
-              type="submit"
-              className="w-full mt-2 py-3 rounded-xl font-semibold text-sm transition-opacity active:opacity-80"
-              style={{
-                background: "var(--primary)",
-                color: "var(--on-primary)",
-                boxShadow: "0 5px 0 var(--primary-strong)",
-              }}
-            >
-              Entrar →
-            </button>
-          </form>
-
-          <p className="text-xs text-center mt-6" style={{ color: "var(--ink-3)" }}>
-            Problemas pra entrar?{" "}
-            <span className="font-semibold" style={{ color: "var(--ink-2)" }}>
-              Fale com o ADM.
-            </span>
-          </p>
-
-          {/* Dica de mock */}
-          <div
-            className="mt-6 p-3 rounded-xl text-xs text-center"
-            style={{ background: "var(--primary-soft)", color: "var(--ink-2)" }}
-          >
-            <strong>Modo mock:</strong> qualquer usuário/senha entra. Use{" "}
-            <strong>adm / adm123</strong> para acessar como ADM.
-          </div>
-        </div>
+      {/* desktop */}
+      <div className="hidden lg:block h-full">
+        <LoginDesktop error={error} onSubmit={handleSubmit} />
       </div>
     </div>
   );
