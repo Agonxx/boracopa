@@ -4,87 +4,56 @@ import { useState } from "react";
 import Flag from "./Flag";
 import type { Match } from "@/lib/mock";
 
-const chevBtn: React.CSSProperties = {
-  border: "none", background: "transparent", cursor: "pointer", padding: 2,
-  display: "grid", placeItems: "center",
-};
-const stepBtn: React.CSSProperties = {
-  width: 36, height: 44, border: "none", background: "transparent",
-  cursor: "pointer", display: "grid", placeItems: "center",
-};
-const teamName: React.CSSProperties = {
-  fontWeight: 700, fontSize: 16, color: "var(--ink)", letterSpacing: -0.2,
-  overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
-};
+const chevBtn: React.CSSProperties = { border: "none", background: "transparent", cursor: "pointer", padding: 2, display: "grid", placeItems: "center" };
+const stepBtn: React.CSSProperties = { width: 36, height: 44, border: "none", background: "transparent", cursor: "pointer", display: "grid", placeItems: "center" };
+const teamName: React.CSSProperties = { fontWeight: 700, fontSize: 16, color: "var(--ink)", letterSpacing: -0.2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" };
+const chip: React.CSSProperties = { fontFamily: "Anton, sans-serif", fontSize: 13, letterSpacing: 0.4, color: "var(--ink)", background: "var(--app-bg)", border: "1px solid var(--line-strong)", borderRadius: 7, padding: "3px 8px", lineHeight: 1, whiteSpace: "nowrap", flexShrink: 0 };
+const statusChip: React.CSSProperties = { fontSize: 11.5, fontWeight: 700, padding: "4px 9px", borderRadius: 20, border: "1px solid var(--line-strong)", whiteSpace: "nowrap" };
 
-/* Stepper vertical — desktop */
+/* ── Score box vertical (desktop) ── */
 function ScoreBox({ value, onChange, locked, sz = 46 }: { value: number | null; onChange: (v: number) => void; locked?: boolean; sz?: number }) {
-  const h = sz + 6;
   const set = value != null;
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
       {!locked && (
         <button onClick={() => onChange((value ?? 0) + 1)} style={chevBtn}>
-          <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
-            <path d="M6 14l6-6 6 6" />
-          </svg>
+          <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round"><path d="M6 14l6-6 6 6" /></svg>
         </button>
       )}
-      <div style={{
-        width: sz, height: h, borderRadius: 12,
-        background: set ? "var(--primary)" : "var(--app-bg)",
-        color: set ? "var(--on-primary)" : "var(--ink-3)",
-        border: set ? "1.6px solid var(--primary-strong)" : "1.6px dashed var(--line-strong)",
-        display: "grid", placeItems: "center",
-        fontFamily: "Anton, sans-serif", fontSize: sz * 0.64, lineHeight: 1,
-        boxShadow: set ? "0 4px 0 var(--primary-strong)" : "none",
-        transition: "all .12s",
-      }}>{set ? value : "–"}</div>
+      <div style={{ width: sz, height: sz + 6, borderRadius: 12, background: set ? "var(--primary)" : "var(--app-bg)", color: set ? "var(--on-primary)" : "var(--ink-3)", border: set ? "1.6px solid var(--primary-strong)" : "1.6px dashed var(--line-strong)", display: "grid", placeItems: "center", fontFamily: "Anton, sans-serif", fontSize: sz * 0.64, lineHeight: 1, boxShadow: set ? "0 4px 0 var(--primary-strong)" : "none", transition: "all .12s" }}>
+        {set ? value : "–"}
+      </div>
       {!locked && (
         <button onClick={() => onChange(Math.max(0, (value ?? 1) - 1))} style={chevBtn}>
-          <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round">
-            <path d="M6 10l6 6 6-6" />
-          </svg>
+          <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round"><path d="M6 10l6 6 6-6" /></svg>
         </button>
       )}
     </div>
   );
 }
 
-/* Stepper horizontal — mobile */
+/* ── Score stepper horizontal (mobile) ── */
 function ScoreStepperH({ value, onChange, locked }: { value: number | null; onChange: (v: number) => void; locked?: boolean }) {
   if (locked) {
-    return (
-      <div style={{ width: 46, height: 44, borderRadius: 11, background: "var(--ink)", color: "var(--surface)", display: "grid", placeItems: "center", fontFamily: "Anton, sans-serif", fontSize: 26 }}>
-        {value}
-      </div>
-    );
+    return <div style={{ width: 46, height: 44, borderRadius: 11, background: "var(--ink)", color: "var(--surface)", display: "grid", placeItems: "center", fontFamily: "Anton, sans-serif", fontSize: 26 }}>{value}</div>;
   }
   const set = value != null;
   return (
     <div style={{ display: "flex", alignItems: "center", border: "1.6px solid var(--line-strong)", borderRadius: 12, overflow: "hidden", background: "var(--surface)", flexShrink: 0 }}>
       <button onClick={() => onChange(Math.max(0, (value ?? 1) - 1))} style={stepBtn}>
-        <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
-          <path d="M5 12h14" />
-        </svg>
+        <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14" /></svg>
       </button>
-      <div style={{
-        width: 46, height: 44, display: "grid", placeItems: "center",
-        fontFamily: "Anton, sans-serif", fontSize: 26, lineHeight: 1,
-        background: set ? "var(--primary)" : "transparent",
-        color: set ? "var(--on-primary)" : "var(--ink-3)",
-        borderLeft: "1.6px solid var(--line-strong)", borderRight: "1.6px solid var(--line-strong)",
-      }}>{set ? value : "–"}</div>
+      <div style={{ width: 46, height: 44, display: "grid", placeItems: "center", fontFamily: "Anton, sans-serif", fontSize: 26, lineHeight: 1, background: set ? "var(--primary)" : "transparent", color: set ? "var(--on-primary)" : "var(--ink-3)", borderLeft: "1.6px solid var(--line-strong)", borderRight: "1.6px solid var(--line-strong)" }}>
+        {set ? value : "–"}
+      </div>
       <button onClick={() => onChange((value ?? 0) + 1)} style={stepBtn}>
-        <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12 5v14M5 12h14" />
-        </svg>
+        <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14M5 12h14" /></svg>
       </button>
     </div>
   );
 }
 
-function TeamRow({ t, value, onChange, locked }: { t: { n: string; c: string }; value: number | null; onChange: (v: number) => void; locked?: boolean }) {
+function TeamRow({ t, value, onChange, locked }: { t: Team; value: number | null; onChange: (v: number) => void; locked?: boolean }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 11 }}>
       <Flag code={t.c} size={32} />
@@ -94,31 +63,72 @@ function TeamRow({ t, value, onChange, locked }: { t: { n: string; c: string }; 
   );
 }
 
-const chip: React.CSSProperties = {
-  fontFamily: "Anton, sans-serif", fontSize: 13, letterSpacing: 0.4,
-  color: "var(--ink)", background: "var(--app-bg)", border: "1px solid var(--line-strong)",
-  borderRadius: 7, padding: "3px 8px", lineHeight: 1,
-};
-const statusChip: React.CSSProperties = {
-  fontSize: 11.5, fontWeight: 700, padding: "4px 9px", borderRadius: 20,
-  border: "1px solid var(--line-strong)", whiteSpace: "nowrap",
-};
+type Team = { n: string; c: string };
 
-export default function MatchCard({ m, compact }: { m: Match; compact?: boolean }) {
+/* ── Advance selector (knockout tie) ── */
+function AdvanceSelector({ a, b, value, onChange }: { a: Team; b: Team; value: string | null; onChange: (v: string) => void }) {
+  const opt = (t: Team) => {
+    const on = value === t.c;
+    return (
+      <button key={t.c} onClick={() => onChange(t.c)} style={{
+        display: "flex", alignItems: "center", gap: 6, padding: "5px 10px 5px 6px",
+        borderRadius: 30, cursor: "pointer",
+        border: on ? "1.6px solid var(--primary-strong)" : "1px solid var(--line-strong)",
+        background: on ? "var(--primary-soft)" : "var(--surface)",
+        color: on ? "var(--primary-strong)" : "var(--ink-2)",
+        fontWeight: 700, fontSize: 12.5,
+      }}>
+        <Flag code={t.c} size={18} /> {t.n}
+      </button>
+    );
+  };
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8, background: "var(--app-bg)", borderRadius: 13, padding: "10px 11px", border: "1.4px dashed var(--line-strong)" }}>
+      <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--ink-2)", display: "flex", alignItems: "center", gap: 6 }}>
+        <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--live)", display: "inline-block" }} />
+        Empate — quem avança nos pênaltis?
+      </span>
+      <div style={{ display: "flex", gap: 8 }}>{opt(a)}{opt(b)}</div>
+    </div>
+  );
+}
+
+export default function MatchCard({ m, compact, knockout }: { m: Match; compact?: boolean; knockout?: boolean }) {
   const [a, setA] = useState<number | null>(m.score[0]);
   const [b, setB] = useState<number | null>(m.score[1]);
+  const [adv, setAdv] = useState<string | null>(m.advance || null);
   const filled = a != null && b != null;
+  const tie = filled && a === b;
   const urgent = m.deadline?.urgent;
   const locked = m.done;
-  const sz = compact ? 42 : 40;
+  const sz = 40;
+
+  /* ── Upcoming card ── */
+  if (m.upcoming) {
+    return (
+      <div style={{ background: "var(--surface)", borderRadius: 18, padding: "13px 16px", border: "1px dashed var(--line-strong)", display: "flex", flexDirection: "column", gap: 10, opacity: 0.78, flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={chip}>{m.grp}</span>
+          <span style={{ fontSize: 12.5, color: "var(--ink-2)", fontWeight: 600 }}>{m.time}</span>
+          <span style={{ ...statusChip, marginLeft: "auto", color: "var(--ink-3)" }}>abre depois</span>
+        </div>
+        {[m.a, m.b].map((t, i) => (
+          <div key={i} style={{ display: "flex", alignItems: "center", gap: 11 }}>
+            <Flag code={t.c} size={28} />
+            <span style={{ ...teamName, flex: 1, fontSize: 14.5 }}>{t.n}</span>
+            <span style={{ fontFamily: "Anton, sans-serif", fontSize: 22, color: "var(--ink-3)" }}>–</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div style={{
       background: "var(--surface)", borderRadius: 20, padding: "14px 16px 16px",
-      border: "1px solid var(--line)",
+      border: tie && knockout && !locked ? "1.5px solid var(--primary-strong)" : "1px solid var(--line)",
       boxShadow: "0 1px 2px rgba(26,24,20,.04), 0 8px 24px -16px rgba(26,24,20,.4)",
-      display: "flex", flexDirection: "column", gap: 12, flexShrink: 0,
-      opacity: locked ? 0.92 : 1,
+      display: "flex", flexDirection: "column", gap: 12, flexShrink: 0, opacity: locked ? 0.92 : 1,
     }}>
       {/* meta */}
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -142,29 +152,22 @@ export default function MatchCard({ m, compact }: { m: Match; compact?: boolean 
       ) : (
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0 }}>
-            <Flag code={m.a.c} size={28} />
-            <span style={{ ...teamName, fontSize: 15 }}>{m.a.n}</span>
+            <Flag code={m.a.c} size={28} /><span style={{ ...teamName, fontSize: 15 }}>{m.a.n}</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            {locked ? (
-              <>
-                {[a, b].map((v, i) => (
-                  <div key={i} style={{ width: sz, height: sz + 6, borderRadius: 12, background: "var(--ink)", color: "var(--surface)", display: "grid", placeItems: "center", fontFamily: "Anton, sans-serif", fontSize: sz * 0.64, lineHeight: 1 }}>{v}</div>
-                ))}
-              </>
-            ) : (
-              <>
-                <ScoreBox value={a} onChange={setA} sz={sz} />
-                <span style={{ fontFamily: "Anton, sans-serif", fontSize: 20, color: "var(--ink-3)" }}>:</span>
-                <ScoreBox value={b} onChange={setB} sz={sz} />
-              </>
-            )}
+            {locked
+              ? <>{[a, b].map((v, i) => <div key={i} style={{ width: sz, height: sz + 6, borderRadius: 12, background: "var(--ink)", color: "var(--surface)", display: "grid", placeItems: "center", fontFamily: "Anton, sans-serif", fontSize: sz * 0.64, lineHeight: 1 }}>{v}</div>)}</>
+              : <><ScoreBox value={a} onChange={setA} sz={sz} /><span style={{ fontFamily: "Anton, sans-serif", fontSize: 20, color: "var(--ink-3)" }}>:</span><ScoreBox value={b} onChange={setB} sz={sz} /></>}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0, justifyContent: "flex-end" }}>
-            <span style={{ ...teamName, fontSize: 15, textAlign: "right" }}>{m.b.n}</span>
-            <Flag code={m.b.c} size={28} />
+            <span style={{ ...teamName, fontSize: 15, textAlign: "right" }}>{m.b.n}</span><Flag code={m.b.c} size={28} />
           </div>
         </div>
+      )}
+
+      {/* knockout tie → advance selector */}
+      {knockout && !locked && tie && (
+        <AdvanceSelector a={m.a} b={m.b} value={adv} onChange={setAdv} />
       )}
 
       {/* footer */}
@@ -174,7 +177,7 @@ export default function MatchCard({ m, compact }: { m: Match; compact?: boolean 
           : filled
             ? <span style={{ fontSize: 12, color: "var(--primary-strong)", fontWeight: 700, display: "flex", alignItems: "center", gap: 5 }}>
                 <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="var(--primary-strong)" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4 10-10" /></svg>
-                Palpite pronto · salva automático
+                Palpite salvo automático
               </span>
             : <span style={{ fontSize: 12, color: "var(--ink-2)" }}>Defina o placar para palpitar</span>}
         <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--ink-3)", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>+3 acerto · +5 cravada</span>
