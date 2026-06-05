@@ -160,7 +160,7 @@ export default function RankingPage() {
       </div>
       <div style={{ fontSize: 12.5, color: "var(--ink-2)", marginTop: -8, fontWeight: 500 }}>{caption}</div>
 
-      <div style={{ maxWidth: 320 }}>
+      <div>
         <Segmented items={RANK_FILTERS} value={filter} onChange={setFilter} />
       </div>
 

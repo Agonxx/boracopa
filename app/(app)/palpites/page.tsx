@@ -170,7 +170,7 @@ export default function PalpitesPage() {
             </div>
           )}
 
-          <div><Segmented items={GROUP_KEYS} value={group} onChange={setGroup} /></div>
+          <div><Segmented items={GROUP_KEYS} value={group} onChange={setGroup} scroll={!isDesktop} /></div>
 
           {isDesktop && (
             <div style={{ fontSize: 13, color: "var(--ink-2)", fontWeight: 500, marginTop: -8 }}>
