@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Users, Ticket, Trophy, User, Shield } from "lucide-react";
 import Wordmark from "@/components/ui/Wordmark";
+import BolaoSwitcher from "@/components/ui/BolaoSwitcher";
 import type { User as UserType } from "@/store/auth";
 
 const baseItems = [
@@ -23,7 +24,12 @@ export default function Sidebar({ user }: { user: UserType }) {
   return (
     <aside className="hidden lg:flex flex-col w-[244px] min-h-full shrink-0 py-8 px-4"
       style={{ background: "var(--surface)", borderRight: "1px solid var(--line)" }}>
-      <div className="px-3 mb-8"><Wordmark /></div>
+      <div className="px-3 mb-3"><Wordmark /></div>
+
+      {/* bolão switcher */}
+      <div className="px-3 mb-6">
+        <BolaoSwitcher compact />
+      </div>
 
       <nav className="flex flex-col gap-1 flex-1">
         {items.map(({ href, label, icon: Icon }) => {
