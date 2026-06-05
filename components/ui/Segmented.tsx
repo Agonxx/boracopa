@@ -14,7 +14,7 @@ export default function Segmented({
     <div style={{
       display: "flex", gap: 5, background: "var(--surface)",
       border: "1px solid var(--line-strong)", borderRadius: 14, padding: 5,
-      overflowX: scroll ? "auto" : "visible", flexShrink: 0,
+      overflowX: scroll ? "auto" : "visible", flexShrink: 0, width: "100%",
     }}>
       {items.map((it) => {
         const label = typeof it === "string" ? it : it.label;
