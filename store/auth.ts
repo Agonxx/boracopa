@@ -1,7 +1,8 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { createClient } from "@/lib/supabase/client";
 
 export interface User {
+  id: string;
   name: string;
   email: string;
   pts: number;
@@ -11,40 +12,19 @@ export interface User {
 interface AuthStore {
   user: User | null;
   _hydrated: boolean;
+  setUser: (user: User | null) => void;
   setHydrated: () => void;
-  login: (email: string, password: string) => boolean;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthStore>()(
-  persist(
-    (set) => ({
-      user: null,
-      _hydrated: false,
-      setHydrated: () => set({ _hydrated: true }),
-      login: (email, password) => {
-        if (!email || !password) return false;
-        if (email === "adm@boracopa.app" && password === "adm123") {
-          set({ user: { name: "Admin", email, pts: 0, isSuperAdmin: true } });
-          return true;
-        }
-        set({
-          user: {
-            name: email.split("@")[0],
-            email,
-            pts: 47,
-            isSuperAdmin: false,
-          },
-        });
-        return true;
-      },
-      logout: () => set({ user: null }),
-    }),
-    {
-      name: "boracopa-auth",
-      onRehydrateStorage: () => (state) => {
-        state?.setHydrated();
-      },
-    }
-  )
-);
+export const useAuthStore = create<AuthStore>((set) => ({
+  user: null,
+  _hydrated: false,
+  setHydrated: () => set({ _hydrated: true }),
+  setUser: (user) => set({ user }),
+  logout: async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    set({ user: null });
+  },
+}));

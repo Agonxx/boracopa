@@ -2,8 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
-import { useAuthStore } from "@/store/auth";
+import { createClient } from "@/lib/supabase/client";
 
 /* ── Escudo hexagonal com raio ── */
 function Crest({ size = 84 }: { size?: number }) {
@@ -123,7 +124,8 @@ function LoginForm({ error, onSubmit }: { error: boolean; onSubmit: (u: string, 
       </button>
 
       <div style={{ textAlign: "center", fontSize: 13, color: "var(--ink-2)", marginTop: 2 }}>
-        Ainda não tem conta? <b style={{ color: "var(--ink)" }}>Cadastre-se.</b>
+        Ainda não tem conta?{" "}
+        <Link href="/register" style={{ color: "var(--ink)", fontWeight: 700, textDecoration: "none" }}>Cadastre-se.</Link>
       </div>
     </form>
   );
@@ -216,13 +218,16 @@ function LoginDesktop({ error, onSubmit }: { error: boolean; onSubmit: (u: strin
 /* ── Page ── */
 export default function LoginPage() {
   const [error, setError] = useState(false);
-  const login = useAuthStore((s) => s.login);
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const supabase = createClient();
 
-  function handleSubmit(username: string, password: string) {
-    const ok = login(username, password);
-    if (ok) router.replace("/home");
-    else setError(true);
+  async function handleSubmit(email: string, password: string) {
+    setLoading(true);
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+    setLoading(false);
+    if (signInError) { setError(true); return; }
+    router.replace("/home");
   }
 
   return (

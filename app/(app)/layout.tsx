@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/auth";
+import { createClient } from "@/lib/supabase/client";
 import Sidebar from "@/components/nav/Sidebar";
 import BottomNav from "@/components/nav/BottomNav";
 import Wordmark from "@/components/ui/Wordmark";
@@ -32,14 +33,54 @@ function MobileHeader() {
 }
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { user, _hydrated } = useAuthStore();
+  const { user, _hydrated, setUser, setHydrated } = useAuthStore();
   const router = useRouter();
 
   useEffect(() => {
-    if (_hydrated && !user) router.replace("/login");
-  }, [user, _hydrated, router]);
+    const supabase = createClient();
 
-  if (!_hydrated || !user) return null;
+    async function loadUser() {
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session) {
+        setHydrated();
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("id, name, is_super_admin")
+        .eq("id", session.user.id)
+        .single();
+
+      setUser({
+        id: session.user.id,
+        name: profile?.name ?? session.user.email?.split("@")[0] ?? "Usuário",
+        email: session.user.email ?? "",
+        pts: 0,
+        isSuperAdmin: profile?.is_super_admin ?? false,
+      });
+      setHydrated();
+    }
+
+    loadUser();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        setUser(null);
+        router.replace("/login");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  if (!_hydrated) return null;
+
+  if (!user) {
+    router.replace("/login");
+    return null;
+  }
 
   return (
     <div className="flex h-full">
