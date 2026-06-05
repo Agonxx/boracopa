@@ -342,6 +342,23 @@ export default function AdmPage() {
               Importar novamente
             </button>
           )}
+
+          <div style={{ borderTop: "1px solid var(--line)", paddingTop: 16, marginTop: 4 }}>
+            <p style={{ fontFamily: "Anton, sans-serif", fontSize: 12, letterSpacing: 1, color: "var(--ink-3)", textTransform: "uppercase", margin: "0 0 10px" }}>Zona de perigo</p>
+            <button
+              onClick={() => {
+                if (window.confirm("Apagar TODAS as partidas e palpites do banco? Esta ação não pode ser desfeita.")) {
+                  supabase.from("matches").delete().neq("id", "00000000-0000-0000-0000-000000000000")
+                    .then(({ error }) => {
+                      if (error) setImportMsg(`Erro: ${error.message}`);
+                      else { setImportMsg("✓ Todas as partidas apagadas."); fetchMatches(); }
+                    });
+                }
+              }}
+              style={{ height: 42, padding: "0 20px", borderRadius: 11, border: "1.5px solid #e74c3c", background: "transparent", color: "#e74c3c", fontFamily: "Archivo, sans-serif", fontWeight: 800, fontSize: 13.5, cursor: "pointer" }}>
+              Apagar todas as partidas
+            </button>
+          </div>
         </div>
       )}
     </div>
