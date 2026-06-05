@@ -70,7 +70,7 @@ function computeDeadline(dateStr: string, status: string): { label: string; urge
   return { label: formatMatchTime(dateStr), urgent: false };
 }
 
-function toCardMatch(m: DbMatch, pred?: Prediction): Match {
+function toCardMatch(m: DbMatch, pred?: Prediction) {
   const finished = m.status === "finished";
   const locked = m.status === "closed" || finished;
   return {
@@ -79,7 +79,7 @@ function toCardMatch(m: DbMatch, pred?: Prediction): Match {
     time: formatMatchTime(m.match_date),
     a: { n: m.team_a, c: m.code_a },
     b: { n: m.team_b, c: m.code_b },
-    score: finished ? [m.result_a, m.result_b] : [pred?.score_a ?? null, pred?.score_b ?? null],
+    score: (finished ? [m.result_a, m.result_b] : [pred?.score_a ?? null, pred?.score_b ?? null]) as [number | null, number | null],
     done: locked,
     upcoming: m.status === "upcoming",
     advance: pred?.advance_code ?? undefined,
