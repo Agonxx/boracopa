@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Flag from "./Flag";
 import type { Match } from "@/lib/mock";
 
@@ -93,10 +93,19 @@ function AdvanceSelector({ a, b, value, onChange }: { a: Team; b: Team; value: s
   );
 }
 
-export default function MatchCard({ m, compact, knockout }: { m: Match; compact?: boolean; knockout?: boolean }) {
+export default function MatchCard({ m, compact, knockout, onSave }: { m: Match; compact?: boolean; knockout?: boolean; onSave?: (a: number, b: number) => void }) {
   const [a, setA] = useState<number | null>(m.score[0]);
   const [b, setB] = useState<number | null>(m.score[1]);
   const [adv, setAdv] = useState<string | null>(m.advance || null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  function scheduleSave(na: number | null, nb: number | null) {
+    if (locked || !onSave || na == null || nb == null) return;
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => onSave(na, nb), 700);
+  }
+  function handleA(v: number) { setA(v); scheduleSave(v, b); }
+  function handleB(v: number) { setB(v); scheduleSave(a, v); }
   const filled = a != null && b != null;
   const tie = filled && a === b;
   const urgent = m.deadline?.urgent;
@@ -146,8 +155,8 @@ export default function MatchCard({ m, compact, knockout }: { m: Match; compact?
       {/* times + placar */}
       {compact ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          <TeamRow t={m.a} value={a} onChange={setA} locked={locked} />
-          <TeamRow t={m.b} value={b} onChange={setB} locked={locked} />
+          <TeamRow t={m.a} value={a} onChange={handleA} locked={locked} />
+          <TeamRow t={m.b} value={b} onChange={handleB} locked={locked} />
         </div>
       ) : (
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -157,7 +166,7 @@ export default function MatchCard({ m, compact, knockout }: { m: Match; compact?
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             {locked
               ? <>{[a, b].map((v, i) => <div key={i} style={{ width: sz, height: sz + 6, borderRadius: 12, background: "var(--ink)", color: "var(--surface)", display: "grid", placeItems: "center", fontFamily: "Anton, sans-serif", fontSize: sz * 0.64, lineHeight: 1 }}>{v}</div>)}</>
-              : <><ScoreBox value={a} onChange={setA} sz={sz} /><span style={{ fontFamily: "Anton, sans-serif", fontSize: 20, color: "var(--ink-3)" }}>:</span><ScoreBox value={b} onChange={setB} sz={sz} /></>}
+              : <><ScoreBox value={a} onChange={handleA} sz={sz} /><span style={{ fontFamily: "Anton, sans-serif", fontSize: 20, color: "var(--ink-3)" }}>:</span><ScoreBox value={b} onChange={handleB} sz={sz} /></>}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, minWidth: 0, justifyContent: "flex-end" }}>
             <span style={{ ...teamName, fontSize: 15, textAlign: "right" }}>{m.b.n}</span><Flag code={m.b.c} size={28} />
