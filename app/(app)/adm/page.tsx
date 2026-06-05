@@ -107,7 +107,7 @@ export default function AdmPage() {
       round: f.phase === "groups" ? parseInt(f.round) : null,
       team_a: f.team_a, team_b: f.team_b,
       code_a: f.code_a.toUpperCase(), code_b: f.code_b.toUpperCase(),
-      match_date: f.match_date,
+      match_date: new Date(f.match_date).toISOString(),
       status: f.status,
     });
     setSaving(false);

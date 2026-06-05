@@ -126,13 +126,6 @@ function ptName(name: string): string {
   return PT_NAMES[name] ?? name;
 }
 
-// Converte UTC → BRT (UTC-3) e retorna formato datetime-local "YYYY-MM-DDTHH:MM"
-function toBRT(utcDate: string): string {
-  const d = new Date(utcDate);
-  d.setUTCHours(d.getUTCHours() - 3);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}T${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
-}
 
 export async function GET() {
   const key = process.env.FOOTBALL_API_KEY;
@@ -169,7 +162,7 @@ export async function GET() {
       team_b: ptName(m.awayTeam.name!),
       code_a: (m.homeTeam.tla ?? "???").toUpperCase(),
       code_b: (m.awayTeam.tla ?? "???").toUpperCase(),
-      match_date: toBRT(m.utcDate),
+      match_date: new Date(m.utcDate).toISOString(),
       status: STATUS_MAP[m.status] ?? "upcoming",
       result_a: null as number | null,
       result_b: null as number | null,
