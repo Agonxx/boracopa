@@ -68,7 +68,7 @@ export default function RegisterPage() {
       return;
     }
 
-    router.replace("/home");
+    window.location.href = "/home";
   }
 
   return (
