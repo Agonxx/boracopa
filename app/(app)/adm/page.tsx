@@ -61,8 +61,9 @@ export default function AdmPage() {
   }
 
   async function handleResetPassword(email: string, userId: string) {
+    const origin = process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin;
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `${origin}/reset-password`,
     });
     setResetMsg(prev => ({ ...prev, [userId]: error ? "Erro ao enviar." : "Email enviado!" }));
     setTimeout(() => setResetMsg(prev => { const n = { ...prev }; delete n[userId]; return n; }), 4000);
