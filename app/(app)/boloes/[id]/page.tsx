@@ -40,12 +40,25 @@ export default function BolaoDetailPage() {
   const paidCount = members.filter(m => m.paid).length;
 
   const fetch = useCallback(async () => {
-    const [{ data: b }, { data: m }] = await Promise.all([
+    const [{ data: b }, { data: memberRows }] = await Promise.all([
       supabase.from("boloes").select("*").eq("id", id).single(),
-      supabase.from("bolao_members").select("id, user_id, paid, paid_at, profiles(name)").eq("bolao_id", id),
+      supabase.from("bolao_members").select("id, user_id, paid, paid_at").eq("bolao_id", id),
     ]);
     setBolao(b);
-    setMembers((m as any) ?? []);
+
+    if (memberRows && memberRows.length > 0) {
+      const userIds = memberRows.map((m) => m.user_id);
+      const { data: profileRows } = await supabase
+        .from("profiles")
+        .select("id, name")
+        .in("id", userIds);
+
+      setMembers(memberRows.map((m) => ({
+        ...m,
+        profiles: { name: profileRows?.find((p) => p.id === m.user_id)?.name ?? "?" },
+      })));
+    }
+
     setLoading(false);
   }, [id]);
 
