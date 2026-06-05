@@ -66,7 +66,7 @@ export default function PalpitesPage() {
       </div>
 
       {/* switch de fase */}
-      <div style={{ maxWidth: isDesktop ? 320 : undefined }}>
+      <div>
         <Segmented items={PHASE_TABS} value={phase} onChange={setPhase} />
       </div>
 
@@ -79,7 +79,7 @@ export default function PalpitesPage() {
           )}
 
           {/* seletor de grupos */}
-          <div style={{ maxWidth: isDesktop ? 460 : undefined }}>
+          <div>
             <Segmented items={GROUP_KEYS} value={group} onChange={setGroup} scroll />
           </div>
 
@@ -101,9 +101,7 @@ export default function PalpitesPage() {
             ))}
           </div>
 
-          <div style={{ maxWidth: isDesktop ? 420 : undefined }}>
-            <ScoringNote />
-          </div>
+          <ScoringNote />
         </>
       ) : (
         <>
@@ -126,7 +124,7 @@ export default function PalpitesPage() {
           </div>
 
           {/* seletor de rodadas */}
-          <div style={{ maxWidth: isDesktop ? 360 : undefined }}>
+          <div>
             <Segmented items={KO_ROUNDS} value={round} onChange={setRound} scroll />
           </div>
 
@@ -147,9 +145,7 @@ export default function PalpitesPage() {
             )}
           </div>
 
-          <div style={{ maxWidth: isDesktop ? 420 : undefined }}>
-            <ScoringNote />
-          </div>
+          <ScoringNote />
         </>
       )}
     </div>
