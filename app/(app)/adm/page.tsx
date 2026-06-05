@@ -38,7 +38,7 @@ export default function AdmPage() {
   const router = useRouter();
   const supabase = createClient();
 
-  const [tab, setTab] = useState<"partidas" | "resultados">("partidas");
+  const [tab, setTab] = useState<"partidas" | "resultados" | "importar">("partidas");
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -46,6 +46,36 @@ export default function AdmPage() {
   const [f, setF] = useState({ phase: "groups", group_name: "A", round: "1", team_a: "", team_b: "", code_a: "", code_b: "", match_date: "", status: "upcoming" });
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState("");
+
+  // importar
+  const [importStatus, setImportStatus] = useState<"idle" | "loading" | "preview" | "importing" | "done" | "error">("idle");
+  const [importData, setImportData] = useState<{ count: number; matches: any[] } | null>(null);
+  const [importMsg, setImportMsg] = useState("");
+
+  async function handleFetchMatches() {
+    setImportStatus("loading");
+    setImportMsg("");
+    try {
+      const res = await fetch("/api/import-matches");
+      const json = await res.json();
+      if (!res.ok) { setImportMsg(json.error ?? "Erro ao buscar"); setImportStatus("error"); return; }
+      setImportData(json);
+      setImportStatus("preview");
+    } catch {
+      setImportMsg("Erro de rede."); setImportStatus("error");
+    }
+  }
+
+  async function handleImport() {
+    if (!importData) return;
+    setImportStatus("importing");
+    const { error } = await supabase.from("matches").insert(importData.matches);
+    if (error) { setImportMsg(`Erro: ${error.message}`); setImportStatus("error"); return; }
+    setImportMsg(`✓ ${importData.count} partidas importadas com sucesso!`);
+    setImportData(null);
+    setImportStatus("done");
+    fetchMatches();
+  }
 
   // resultados
   const [resMatch, setResMatch] = useState<string>("");
@@ -122,9 +152,9 @@ export default function AdmPage() {
 
       {/* tabs */}
       <div style={{ display: "flex", gap: 5, background: "var(--surface)", border: "1px solid var(--line-strong)", borderRadius: 14, padding: 5, width: "fit-content" }}>
-        {(["partidas", "resultados"] as const).map((t) => (
-          <button key={t} onClick={() => setTab(t)} style={{ padding: "8px 18px", borderRadius: 10, border: "none", cursor: "pointer", fontFamily: "Archivo, sans-serif", fontWeight: 800, fontSize: 13.5, background: tab === t ? "var(--ink)" : "transparent", color: tab === t ? "var(--surface)" : "var(--ink-2)", transition: "all .12s" }}>
-            {t === "partidas" ? "Partidas" : "Resultados"}
+        {(["partidas", "resultados", "importar"] as const).map((t) => (
+          <button key={t} onClick={() => setTab(t)} style={{ padding: "8px 18px", borderRadius: 10, border: "none", cursor: "pointer", fontFamily: "Archivo, sans-serif", fontWeight: 800, fontSize: 13.5, background: tab === t ? "var(--ink)" : "transparent", color: tab === t ? "var(--surface)" : "var(--ink-2)", transition: "all .12s", whiteSpace: "nowrap" }}>
+            {t === "partidas" ? "Partidas" : t === "resultados" ? "Resultados" : "Importar"}
           </button>
         ))}
       </div>
@@ -241,6 +271,78 @@ export default function AdmPage() {
             ))}
           </div>
         </>
+      )}
+
+      {tab === "importar" && (
+        <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--line)", padding: "18px 18px 22px", display: "flex", flexDirection: "column", gap: 16 }}>
+          <div>
+            <p style={{ fontFamily: "Anton, sans-serif", fontSize: 14, letterSpacing: 1, color: "var(--ink-3)", textTransform: "uppercase", margin: "0 0 6px" }}>Importar Copa 2026</p>
+            <p style={{ fontSize: 13, color: "var(--ink-2)", margin: 0, lineHeight: 1.5 }}>
+              Busca as partidas da Copa do Mundo 2026 via <b>football-data.org</b> e importa para o banco.
+              Horários são convertidos automaticamente para <b>Brasília (UTC-3)</b>.
+            </p>
+          </div>
+
+          {importMsg && (
+            <div style={{ background: importStatus === "error" ? "#fff0f0" : "var(--primary-soft)", borderRadius: 12, padding: "10px 14px", fontSize: 13.5, fontWeight: 700, color: importStatus === "error" ? "#c0392b" : "var(--primary-strong)" }}>
+              {importMsg}
+            </div>
+          )}
+
+          {importStatus === "preview" && importData && (
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: "var(--ink)" }}>
+                {importData.count} partidas encontradas
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 260, overflowY: "auto" }}>
+                {importData.matches.slice(0, 10).map((m: any, i: number) => (
+                  <div key={i} style={{ fontSize: 12.5, color: "var(--ink-2)", padding: "6px 10px", background: "var(--app-bg)", borderRadius: 8 }}>
+                    <b style={{ color: "var(--ink)" }}>{m.team_a} vs {m.team_b}</b>
+                    {" · "}{m.phase === "groups" ? `Grupo ${m.group_name} Rod.${m.round}` : m.phase}
+                    {" · "}{new Date(m.match_date).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}
+                  </div>
+                ))}
+                {importData.count > 10 && (
+                  <p style={{ margin: 0, fontSize: 12, color: "var(--ink-3)", textAlign: "center" }}>
+                    + {importData.count - 10} partidas
+                  </p>
+                )}
+              </div>
+              <div style={{ display: "flex", gap: 10, marginTop: 4 }}>
+                <button onClick={() => { setImportData(null); setImportStatus("idle"); setImportMsg(""); }}
+                  style={{ flex: 1, height: 44, borderRadius: 11, border: "1.5px solid var(--line-strong)", background: "transparent", color: "var(--ink)", fontFamily: "Archivo, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+                  Cancelar
+                </button>
+                <button onClick={handleImport}
+                  style={{ flex: 2, height: 44, borderRadius: 11, border: "none", background: "var(--primary)", color: "var(--on-primary)", fontFamily: "Archivo, sans-serif", fontWeight: 800, fontSize: 14, cursor: "pointer", boxShadow: "0 4px 0 var(--primary-strong)" }}>
+                  Importar {importData.count} partidas →
+                </button>
+              </div>
+            </div>
+          )}
+
+          {(importStatus === "idle" || importStatus === "error") && (
+            <button onClick={handleFetchMatches}
+              style={{ height: 48, borderRadius: 12, border: "none", background: "var(--ink)", color: "var(--surface)", fontFamily: "Archivo, sans-serif", fontWeight: 800, fontSize: 15, cursor: "pointer" }}>
+              Buscar partidas →
+            </button>
+          )}
+
+          {importStatus === "loading" && (
+            <p style={{ fontSize: 13, color: "var(--ink-3)", textAlign: "center" }}>Buscando partidas...</p>
+          )}
+
+          {importStatus === "importing" && (
+            <p style={{ fontSize: 13, color: "var(--ink-3)", textAlign: "center" }}>Importando...</p>
+          )}
+
+          {importStatus === "done" && (
+            <button onClick={() => { setImportStatus("idle"); setImportMsg(""); }}
+              style={{ height: 44, borderRadius: 11, border: "1.5px solid var(--line-strong)", background: "transparent", color: "var(--ink)", fontFamily: "Archivo, sans-serif", fontWeight: 700, fontSize: 14, cursor: "pointer" }}>
+              Importar novamente
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
