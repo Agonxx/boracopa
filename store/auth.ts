@@ -3,16 +3,16 @@ import { persist } from "zustand/middleware";
 
 export interface User {
   name: string;
-  sector: string;
+  email: string;
   pts: number;
-  isAdmin: boolean;
+  isSuperAdmin: boolean;
 }
 
 interface AuthStore {
   user: User | null;
   _hydrated: boolean;
   setHydrated: () => void;
-  login: (username: string, password: string) => boolean;
+  login: (email: string, password: string) => boolean;
   logout: () => void;
 }
 
@@ -22,18 +22,18 @@ export const useAuthStore = create<AuthStore>()(
       user: null,
       _hydrated: false,
       setHydrated: () => set({ _hydrated: true }),
-      login: (username, password) => {
-        if (!username || !password) return false;
-        if (username === "adm" && password === "adm123") {
-          set({ user: { name: "Admin", sector: "TI", pts: 0, isAdmin: true } });
+      login: (email, password) => {
+        if (!email || !password) return false;
+        if (email === "adm@boracopa.app" && password === "adm123") {
+          set({ user: { name: "Admin", email, pts: 0, isSuperAdmin: true } });
           return true;
         }
         set({
           user: {
-            name: username,
-            sector: "Comercial",
+            name: email.split("@")[0],
+            email,
             pts: 47,
-            isAdmin: false,
+            isSuperAdmin: false,
           },
         });
         return true;

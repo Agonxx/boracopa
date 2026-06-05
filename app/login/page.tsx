@@ -82,9 +82,10 @@ function LoginForm({ error, onSubmit }: { error: boolean; onSubmit: (u: string, 
   return (
     <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <Field
-        label="Usuário de rede"
+        label="E-mail"
         iconPath="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"
-        value={user} onChange={setUser} placeholder="nome.sobrenome" autoFocus
+        type="email"
+        value={user} onChange={setUser} placeholder="seu@email.com" autoFocus
       />
       <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
         <Field
@@ -122,7 +123,7 @@ function LoginForm({ error, onSubmit }: { error: boolean; onSubmit: (u: string, 
       </button>
 
       <div style={{ textAlign: "center", fontSize: 13, color: "var(--ink-2)", marginTop: 2 }}>
-        Problemas pra entrar? <b style={{ color: "var(--ink)" }}>Fale com o ADM.</b>
+        Ainda não tem conta? <b style={{ color: "var(--ink)" }}>Cadastre-se.</b>
       </div>
     </form>
   );
@@ -142,7 +143,7 @@ function LoginMobile({ error, onSubmit }: { error: boolean; onSubmit: (u: string
               <span>BORA</span><span style={{ color: "var(--primary)" }}>COPA</span>
             </div>
             <div style={{ fontSize: 13.5, color: "var(--hero-dim)", marginTop: 8, fontWeight: 500 }}>
-              o bolão da firma · Copa 2026
+              o bolão dos amigos · Copa 2026
             </div>
           </div>
         </div>
@@ -159,7 +160,7 @@ function LoginMobile({ error, onSubmit }: { error: boolean; onSubmit: (u: string
       </div>
 
       <div style={{ textAlign: "center", fontSize: 11, color: "var(--ink-3)", padding: "6px 0 26px", fontWeight: 600 }}>
-        Acesso com sua conta da rede interna · v1.0
+        BoraCopa · Copa 2026
       </div>
     </div>
   );
@@ -180,10 +181,10 @@ function LoginDesktop({ error, onSubmit }: { error: boolean; onSubmit: (u: strin
         </div>
         <div style={{ position: "relative", marginTop: "auto" }}>
           <div style={{ fontFamily: "Anton, sans-serif", fontSize: 46, lineHeight: 0.98, letterSpacing: 0.4 }}>
-            O BOLÃO DA<br />FIRMA NA<br /><span style={{ color: "var(--primary)" }}>COPA 2026</span>
+            O BOLÃO DA<br />GALERA NA<br /><span style={{ color: "var(--primary)" }}>COPA 2026</span>
           </div>
           <div style={{ fontSize: 15, color: "var(--hero-dim)", marginTop: 16, maxWidth: 320, lineHeight: 1.5 }}>
-            Palpite nos jogos, crave o placar e suba no ranking dos colegas. Entra com sua conta da rede — sem cadastro.
+            Palpite nos jogos, crave o placar e dispute o ranking com os amigos. Crie sua conta grátis.
           </div>
           <div style={{ display: "flex", gap: 22, marginTop: 28 }}>
             {([["64", "jogos"], ["128", "no bolão"], ["+5", "cravada"]] as const).map(([v, k]) => (

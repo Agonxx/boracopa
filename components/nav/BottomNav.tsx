@@ -11,9 +11,9 @@ const baseItems = [
   { href: "/perfil", label: "Perfil", icon: User },
 ];
 
-export default function BottomNav({ isAdmin }: { isAdmin: boolean }) {
+export default function BottomNav({ isAdmin: isSuperAdmin }: { isAdmin: boolean }) {
   const pathname = usePathname();
-  const items = isAdmin
+  const items = isSuperAdmin
     ? [...baseItems, { href: "/adm", label: "ADM", icon: Shield }]
     : baseItems;
 

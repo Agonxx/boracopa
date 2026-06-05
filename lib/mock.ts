@@ -49,21 +49,21 @@ export const KO: Record<string, Match[]> = {
 
 /* ── Ranking ── */
 export interface RankEntry {
-  pos: number; name: string; sector: string; pts: number; cravadas: number; init: string; you?: boolean;
+  pos: number; name: string; pts: number; cravadas: number; init: string; you?: boolean;
 }
 export const RANK: RankEntry[] = [
-  { pos: 1, name: "Carlos Ribeiro", sector: "Comercial", pts: 184, cravadas: 7, init: "CR" },
-  { pos: 2, name: "Júlia Prado", sector: "Produto", pts: 167, cravadas: 6, init: "JP" },
-  { pos: 3, name: "Marcos Teixeira", sector: "TI", pts: 152, cravadas: 5, init: "MT" },
-  { pos: 4, name: "Ana Martins", sector: "Produto", pts: 128, cravadas: 5, init: "AM", you: true },
-  { pos: 5, name: "Pedro Lima", sector: "Financeiro", pts: 121, cravadas: 4, init: "PL" },
-  { pos: 6, name: "Bianca Souza", sector: "RH", pts: 118, cravadas: 4, init: "BS" },
-  { pos: 7, name: "Diego Farias", sector: "TI", pts: 109, cravadas: 3, init: "DF" },
-  { pos: 8, name: "Letícia Alves", sector: "Comercial", pts: 104, cravadas: 3, init: "LA" },
+  { pos: 1, name: "Carlos Ribeiro", pts: 184, cravadas: 7, init: "CR" },
+  { pos: 2, name: "Júlia Prado", pts: 167, cravadas: 6, init: "JP" },
+  { pos: 3, name: "Marcos Teixeira", pts: 152, cravadas: 5, init: "MT" },
+  { pos: 4, name: "Ana Martins", pts: 128, cravadas: 5, init: "AM", you: true },
+  { pos: 5, name: "Pedro Lima", pts: 121, cravadas: 4, init: "PL" },
+  { pos: 6, name: "Bianca Souza", pts: 118, cravadas: 4, init: "BS" },
+  { pos: 7, name: "Diego Farias", pts: 109, cravadas: 3, init: "DF" },
+  { pos: 8, name: "Letícia Alves", pts: 104, cravadas: 3, init: "LA" },
 ];
-export const RANK_FILTERS = ["Geral", "Por setor", "Rodada"];
+export const RANK_FILTERS = ["Geral", "Fase de grupos", "Mata-mata"];
 export const RANK_CAPTIONS: Record<string, string> = {
   "Geral": "Classificação geral do bolão · 32 participantes",
-  "Por setor": "Recorte do seu setor · Produto · 6 participantes",
-  "Rodada": "Quem mais pontuou na Rodada 2 da fase de grupos",
+  "Fase de grupos": "Pontos acumulados apenas na fase de grupos",
+  "Mata-mata": "Pontos acumulados apenas no mata-mata",
 };

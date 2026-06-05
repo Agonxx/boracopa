@@ -53,7 +53,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           {children}
         </main>
       </div>
-      <BottomNav isAdmin={user.isAdmin} />
+      <BottomNav isAdmin={user.isSuperAdmin} />
     </div>
   );
 }

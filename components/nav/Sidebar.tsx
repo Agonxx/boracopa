@@ -15,7 +15,7 @@ const baseItems = [
 
 export default function Sidebar({ user }: { user: UserType }) {
   const pathname = usePathname();
-  const items = user.isAdmin
+  const items = user.isSuperAdmin
     ? [...baseItems, { href: "/adm", label: "Central ADM", icon: Shield }]
     : baseItems;
 
@@ -72,7 +72,7 @@ export default function Sidebar({ user }: { user: UserType }) {
             {user.name}
           </p>
           <p className="text-xs truncate" style={{ color: "var(--ink-3)" }}>
-            {user.sector} · {user.pts} pts
+            {user.pts} pts{user.isSuperAdmin ? " · Super ADM" : ""}
           </p>
         </div>
       </div>

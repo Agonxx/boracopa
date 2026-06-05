@@ -24,7 +24,7 @@ export default function PerfilPage() {
         >
           <p className="font-semibold" style={{ color: "var(--ink)" }}>{user.name}</p>
           <p className="text-sm" style={{ color: "var(--ink-2)" }}>
-            {user.sector} · {user.pts} pts {user.isAdmin && "· ADM"}
+            {user.pts} pts {user.isSuperAdmin && "· Super ADM"}
           </p>
         </div>
       )}

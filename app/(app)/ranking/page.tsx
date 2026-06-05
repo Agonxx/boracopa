@@ -67,7 +67,7 @@ function Podium() {
 }
 
 /* ── Linha do ranking (mobile) ── */
-function RankRow({ r, showSector }: { r: RankEntry; showSector?: boolean }) {
+function RankRow({ r }: { r: RankEntry }) {
   return (
     <div style={{
       display: "flex", alignItems: "center", gap: 12, padding: "10px 13px", borderRadius: 14,
@@ -82,7 +82,6 @@ function RankRow({ r, showSector }: { r: RankEntry; showSector?: boolean }) {
         <div style={{ fontSize: 14, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
           {r.name}{r.you && <span style={{ opacity: 0.85, fontWeight: 600 }}> · você</span>}
         </div>
-        {showSector && <div style={{ fontSize: 11.5, fontWeight: 600, color: r.you ? "rgba(255,255,255,.7)" : "var(--ink-3)" }}>{r.sector}</div>}
       </div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
         <span style={{ fontFamily: "Anton, sans-serif", fontSize: 18 }}>{r.pts}</span>
@@ -96,7 +95,7 @@ function RankRow({ r, showSector }: { r: RankEntry; showSector?: boolean }) {
 function DeskRow({ r }: { r: RankEntry }) {
   return (
     <div style={{
-      display: "grid", gridTemplateColumns: "48px 1fr 160px 110px 110px", alignItems: "center", gap: 10,
+      display: "grid", gridTemplateColumns: "48px 1fr 110px 110px", alignItems: "center", gap: 10,
       padding: "12px 16px", borderRadius: 14,
       background: r.you ? "var(--primary)" : "var(--surface)",
       border: r.you ? "none" : "1px solid var(--line)",
@@ -110,7 +109,6 @@ function DeskRow({ r }: { r: RankEntry }) {
           {r.name}{r.you && <span style={{ opacity: 0.85, fontWeight: 600 }}> · você</span>}
         </span>
       </div>
-      <span style={{ fontSize: 14, fontWeight: 600, color: r.you ? "rgba(255,255,255,.8)" : "var(--ink-2)" }}>{r.sector}</span>
       <span style={{ fontSize: 14, fontWeight: 700, textAlign: "center", color: r.you ? "var(--on-primary)" : "var(--ink)" }}>{r.cravadas}</span>
       <div style={{ textAlign: "right", display: "flex", alignItems: "baseline", gap: 4, justifyContent: "flex-end" }}>
         <span style={{ fontFamily: "Anton, sans-serif", fontSize: 20 }}>{r.pts}</span>
@@ -144,7 +142,7 @@ export default function RankingPage() {
           <Segmented items={RANK_FILTERS} value={filter} onChange={setFilter} />
           <Podium />
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {rest.map((r) => <RankRow key={r.pos} r={r} showSector={filter === "Por setor"} />)}
+            {rest.map((r) => <RankRow key={r.pos} r={r} />)}
           </div>
         </div>
 
@@ -204,10 +202,9 @@ export default function RankingPage() {
           <div style={{ maxWidth: 320, marginBottom: 4 }}>
             <Segmented items={RANK_FILTERS} value={filter} onChange={setFilter} />
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "48px 1fr 160px 110px 110px", gap: 10, padding: "0 16px 2px", fontSize: 11, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase", color: "var(--ink-3)" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "48px 1fr 110px 110px", gap: 10, padding: "0 16px 2px", fontSize: 11, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase", color: "var(--ink-3)" }}>
             <span style={{ textAlign: "center" }}>#</span>
             <span>Participante</span>
-            <span>Setor</span>
             <span style={{ textAlign: "center" }}>Cravadas</span>
             <span style={{ textAlign: "right" }}>Pontos</span>
           </div>

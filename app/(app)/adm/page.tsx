@@ -9,10 +9,10 @@ export default function AdmPage() {
   const router = useRouter();
 
   useEffect(() => {
-    if (_hydrated && user && !user.isAdmin) router.replace("/home");
+    if (_hydrated && user && !user.isSuperAdmin) router.replace("/home");
   }, [user, _hydrated, router]);
 
-  if (!_hydrated || !user?.isAdmin) return null;
+  if (!_hydrated || !user?.isSuperAdmin) return null;
 
   return (
     <div className="p-4 lg:p-8 max-w-2xl mx-auto">
