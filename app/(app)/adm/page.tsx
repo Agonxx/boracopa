@@ -38,7 +38,7 @@ export default function AdmPage() {
   const router = useRouter();
   const supabase = createClient();
 
-  const [tab, setTab] = useState<"partidas" | "resultados" | "importar">("partidas");
+  const [tab, setTab] = useState<"partidas" | "resultados" | "importar" | "usuarios">("partidas");
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -46,6 +46,27 @@ export default function AdmPage() {
   const [f, setF] = useState({ phase: "groups", group_name: "A", round: "1", team_a: "", team_b: "", code_a: "", code_b: "", match_date: "", status: "upcoming" });
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState("");
+
+  // usuarios
+  interface UserRow { id: string; email: string; name: string | null; created_at: string; }
+  const [users, setUsers] = useState<UserRow[]>([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [resetMsg, setResetMsg] = useState<Record<string, string>>({});
+
+  async function fetchUsers() {
+    setUsersLoading(true);
+    const { data } = await supabase.rpc("get_all_users_for_admin");
+    setUsers((data as UserRow[]) ?? []);
+    setUsersLoading(false);
+  }
+
+  async function handleResetPassword(email: string, userId: string) {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setResetMsg(prev => ({ ...prev, [userId]: error ? "Erro ao enviar." : "Email enviado!" }));
+    setTimeout(() => setResetMsg(prev => { const n = { ...prev }; delete n[userId]; return n; }), 4000);
+  }
 
   // importar
   const [importStatus, setImportStatus] = useState<"idle" | "loading" | "preview" | "importing" | "done" | "error">("idle");
@@ -169,9 +190,9 @@ export default function AdmPage() {
 
       {/* tabs */}
       <div style={{ display: "flex", gap: 5, background: "var(--surface)", border: "1px solid var(--line-strong)", borderRadius: 14, padding: 5, width: "fit-content" }}>
-        {(["partidas", "resultados", "importar"] as const).map((t) => (
-          <button key={t} onClick={() => setTab(t)} style={{ padding: "8px 18px", borderRadius: 10, border: "none", cursor: "pointer", fontFamily: "Archivo, sans-serif", fontWeight: 800, fontSize: 13.5, background: tab === t ? "var(--ink)" : "transparent", color: tab === t ? "var(--surface)" : "var(--ink-2)", transition: "all .12s", whiteSpace: "nowrap" }}>
-            {t === "partidas" ? "Partidas" : t === "resultados" ? "Resultados" : "Importar"}
+        {(["partidas", "resultados", "importar", "usuarios"] as const).map((t) => (
+          <button key={t} onClick={() => { setTab(t); if (t === "usuarios") fetchUsers(); }} style={{ padding: "8px 18px", borderRadius: 10, border: "none", cursor: "pointer", fontFamily: "Archivo, sans-serif", fontWeight: 800, fontSize: 13.5, background: tab === t ? "var(--ink)" : "transparent", color: tab === t ? "var(--surface)" : "var(--ink-2)", transition: "all .12s", whiteSpace: "nowrap" }}>
+            {t === "partidas" ? "Partidas" : t === "resultados" ? "Resultados" : t === "importar" ? "Importar" : "Usuários"}
           </button>
         ))}
       </div>
@@ -288,6 +309,58 @@ export default function AdmPage() {
             ))}
           </div>
         </>
+      )}
+
+      {tab === "usuarios" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <p style={{ fontFamily: "Anton, sans-serif", fontSize: 14, letterSpacing: 1, color: "var(--ink-3)", textTransform: "uppercase", margin: 0 }}>
+              Usuários ({users.length})
+            </p>
+            <button onClick={fetchUsers} style={{ marginLeft: "auto", height: 32, padding: "0 14px", borderRadius: 8, border: "1.5px solid var(--line-strong)", background: "transparent", fontFamily: "Archivo, sans-serif", fontWeight: 700, fontSize: 12.5, color: "var(--ink-2)", cursor: "pointer" }}>
+              Atualizar
+            </button>
+          </div>
+
+          {usersLoading && <p style={{ fontSize: 13, color: "var(--ink-3)" }}>Carregando...</p>}
+
+          {users.map((u) => (
+            <div key={u.id} style={{ background: "var(--surface)", borderRadius: 14, border: "1px solid var(--line)", padding: "14px 16px", display: "flex", alignItems: "center", gap: 14 }}>
+              {/* avatar */}
+              <div style={{ width: 40, height: 40, borderRadius: "50%", flexShrink: 0, background: "var(--app-bg)", border: "1.5px solid var(--line-strong)", display: "grid", placeItems: "center", fontFamily: "Anton, sans-serif", fontSize: 15, color: "var(--ink-2)", letterSpacing: 0.3 }}>
+                {(u.name ?? u.email).slice(0, 2).toUpperCase()}
+              </div>
+
+              {/* info */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ margin: "0 0 2px", fontWeight: 700, fontSize: 14, color: "var(--ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {u.name ?? <span style={{ color: "var(--ink-3)", fontStyle: "italic" }}>sem nome</span>}
+                </p>
+                <p style={{ margin: 0, fontSize: 12.5, color: "var(--ink-2)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{u.email}</p>
+                <p style={{ margin: "2px 0 0", fontSize: 11, color: "var(--ink-3)" }}>
+                  desde {new Date(u.created_at).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })}
+                </p>
+              </div>
+
+              {/* reset */}
+              <div style={{ flexShrink: 0, textAlign: "right" }}>
+                {resetMsg[u.id] ? (
+                  <span style={{ fontSize: 12, fontWeight: 700, color: resetMsg[u.id] === "Email enviado!" ? "var(--primary-strong)" : "#c0392b" }}>
+                    {resetMsg[u.id]}
+                  </span>
+                ) : (
+                  <button onClick={() => handleResetPassword(u.email, u.id)} style={{ height: 34, padding: "0 12px", borderRadius: 9, border: "1.5px solid var(--line-strong)", background: "transparent", fontFamily: "Archivo, sans-serif", fontWeight: 700, fontSize: 12.5, color: "var(--ink-2)", cursor: "pointer", whiteSpace: "nowrap" }}>
+                    Resetar senha
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+
+          {!usersLoading && users.length === 0 && (
+            <p style={{ fontSize: 13, color: "var(--ink-3)" }}>Nenhum usuário encontrado.</p>
+          )}
+        </div>
       )}
 
       {tab === "importar" && (
