@@ -91,7 +91,7 @@ export default function RankingPage() {
 
     const { data: memberRows } = await supabase
       .from("bolao_members")
-      .select("user_id")
+      .select("user_id, pts, cravadas")
       .eq("bolao_id", activeBolaoId);
 
     if (!memberRows || memberRows.length === 0) { setRank([]); setLoading(false); return; }
@@ -102,17 +102,19 @@ export default function RankingPage() {
       .select("id, name")
       .in("id", userIds);
 
-    // pontos virão das predictions depois; por ora 0
     const entries: RankEntry[] = (profiles ?? [])
-      .map((p, i) => ({
-        pos: i + 1,
-        user_id: p.id,
-        name: p.name,
-        pts: 0,
-        cravadas: 0,
-        init: p.name.slice(0, 2).toUpperCase(),
-        you: p.id === user.id,
-      }))
+      .map((p) => {
+        const member = memberRows.find((m) => m.user_id === p.id);
+        return {
+          pos: 0,
+          user_id: p.id,
+          name: p.name,
+          pts: member?.pts ?? 0,
+          cravadas: member?.cravadas ?? 0,
+          init: p.name.slice(0, 2).toUpperCase(),
+          you: p.id === user.id,
+        };
+      })
       .sort((a, b) => b.pts - a.pts || (a.you ? -1 : 1))
       .map((e, i) => ({ ...e, pos: i + 1 }));
 

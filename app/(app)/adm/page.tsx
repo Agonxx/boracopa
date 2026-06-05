@@ -128,14 +128,31 @@ export default function AdmPage() {
     e.preventDefault();
     if (!resMatch || resA === "" || resB === "") return;
     setPublishing(true);
-    await supabase.from("matches").update({
-      result_a: parseInt(resA), result_b: parseInt(resB), status: "finished",
+    const resultA = parseInt(resA);
+    const resultB = parseInt(resB);
+
+    const { error: matchErr } = await supabase.from("matches").update({
+      result_a: resultA, result_b: resultB, status: "finished",
     }).eq("id", resMatch);
+
+    if (matchErr) {
+      setPublishing(false);
+      setSavedMsg("Erro ao salvar resultado.");
+      setTimeout(() => setSavedMsg(""), 4000);
+      return;
+    }
+
+    await supabase.rpc("apply_match_result", {
+      p_match_id: resMatch,
+      p_result_a: resultA,
+      p_result_b: resultB,
+    });
+
     setPublishing(false);
     setResMatch(""); setResA(""); setResB("");
     fetchMatches();
-    setSavedMsg("Resultado publicado!");
-    setTimeout(() => setSavedMsg(""), 3000);
+    setSavedMsg("Resultado publicado! Pontos distribuídos.");
+    setTimeout(() => setSavedMsg(""), 4000);
   }
 
   const closedMatches = matches.filter(m => m.status === "closed" || m.status === "open");
