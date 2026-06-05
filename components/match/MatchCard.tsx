@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState } from "react";
 import Flag from "./Flag";
 import type { Match } from "@/lib/mock";
 
@@ -97,15 +97,21 @@ export default function MatchCard({ m, compact, knockout, onSave }: { m: Match; 
   const [a, setA] = useState<number | null>(m.score[0]);
   const [b, setB] = useState<number | null>(m.score[1]);
   const [adv, setAdv] = useState<string | null>(m.advance || null);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [confirmed, setConfirmed] = useState(
+    m.done || (m.score[0] != null && m.score[1] != null)
+  );
+  const [saving, setSaving] = useState(false);
 
-  function scheduleSave(na: number | null, nb: number | null) {
-    if (locked || !onSave || na == null || nb == null) return;
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => onSave(na, nb), 700);
+  function handleA(v: number) { setA(v); setConfirmed(false); }
+  function handleB(v: number) { setB(v); setConfirmed(false); }
+
+  async function handleConfirm() {
+    if (a == null || b == null || !onSave) return;
+    setSaving(true);
+    await onSave(a, b);
+    setSaving(false);
+    setConfirmed(true);
   }
-  function handleA(v: number) { setA(v); scheduleSave(v, b); }
-  function handleB(v: number) { setB(v); scheduleSave(a, v); }
   const filled = a != null && b != null;
   const tie = filled && a === b;
   const urgent = m.deadline?.urgent;
@@ -144,7 +150,7 @@ export default function MatchCard({ m, compact, knockout, onSave }: { m: Match; 
         <span style={chip}>{m.grp}</span>
         <span style={{ fontSize: 12.5, color: "var(--ink-2)", fontWeight: 600 }}>{m.time}</span>
         <span style={{ marginLeft: "auto" }}>
-          {locked
+          {(locked || confirmed)
             ? <span style={{ ...statusChip, color: "var(--primary-strong)", borderColor: "transparent", background: "var(--primary-soft)" }}>✓ palpitado</span>
             : urgent
               ? <span style={{ ...statusChip, color: "#7a3b00", background: "var(--live-soft)", borderColor: "transparent" }}>fecha em {m.deadline?.label}</span>
@@ -180,16 +186,33 @@ export default function MatchCard({ m, compact, knockout, onSave }: { m: Match; 
       )}
 
       {/* footer */}
-      <div style={{ display: "flex", alignItems: "center", gap: 8, borderTop: "1px solid var(--line)", paddingTop: 10 }}>
-        {locked
-          ? <span style={{ fontSize: 12, color: "var(--ink-2)" }}>Editável até <b style={{ color: "var(--ink)" }}>{m.editUntil}</b></span>
-          : filled
-            ? <span style={{ fontSize: 12, color: "var(--primary-strong)", fontWeight: 700, display: "flex", alignItems: "center", gap: 5 }}>
-                <svg width={15} height={15} viewBox="0 0 24 24" fill="none" stroke="var(--primary-strong)" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4 10-10" /></svg>
-                Palpite salvo automático
-              </span>
-            : <span style={{ fontSize: 12, color: "var(--ink-2)" }}>Defina o placar para palpitar</span>}
-        <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--ink-3)", fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>+3 acerto · +5 cravada</span>
+      <div style={{ borderTop: "1px solid var(--line)", paddingTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+        {!locked && filled && !confirmed && (
+          <button onClick={handleConfirm} disabled={saving} style={{
+            width: "100%", height: 40, borderRadius: 10, border: "none",
+            background: saving ? "var(--primary-soft)" : "var(--primary)",
+            color: saving ? "var(--primary-strong)" : "var(--on-primary)",
+            fontFamily: "Archivo, sans-serif", fontWeight: 800, fontSize: 14,
+            cursor: saving ? "default" : "pointer",
+            boxShadow: saving ? "none" : "0 3px 0 var(--primary-strong)",
+            transition: "all .12s",
+          }}>
+            {saving ? "Salvando..." : "Confirmar palpite →"}
+          </button>
+        )}
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          {locked
+            ? <span style={{ fontSize: 12, color: "var(--ink-2)" }}>Editável até <b style={{ color: "var(--ink)" }}>{m.editUntil}</b></span>
+            : confirmed
+              ? <span style={{ fontSize: 12, color: "var(--primary-strong)", fontWeight: 700, display: "flex", alignItems: "center", gap: 5 }}>
+                  <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="var(--primary-strong)" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4 10-10" /></svg>
+                  Palpite confirmado · <button onClick={() => setConfirmed(false)} style={{ background: "none", border: "none", color: "var(--ink-2)", fontSize: 12, cursor: "pointer", padding: 0, fontFamily: "Archivo, sans-serif", fontWeight: 600 }}>editar</button>
+                </span>
+              : <span style={{ fontSize: 12, color: "var(--ink-2)" }}>
+                  {filled ? "Revise e confirme o palpite" : "Defina o placar para palpitar"}
+                </span>}
+          <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--ink-3)", fontWeight: 600, fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>+3 acerto · +5 cravada</span>
+        </div>
       </div>
     </div>
   );
