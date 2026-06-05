@@ -18,7 +18,7 @@ const PHASES = [
   { v: "semi",    l: "Semifinal" },
   { v: "final",   l: "Final" },
 ];
-const GROUPS = ["A","B","C","D","E","F","G","H"];
+const GROUPS = ["A","B","C","D","E","F","G","H","I","J","K","L"];
 const STATUS_LABEL: Record<string, string> = {
   upcoming: "Em breve", open: "Aberto", closed: "Encerrado", finished: "Finalizado",
 };

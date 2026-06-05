@@ -16,7 +16,7 @@ export const MATCHES: Match[] = [
 ];
 
 /* ── Palpites — Grupos ── */
-export const GROUP_KEYS = ["A", "B", "C", "D", "E", "F", "G", "H"];
+export const GROUP_KEYS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
 export const GROUPS: Record<string, Match[]> = {
   C: [
     { id: 10, grp: "Rod. 2", time: "Hoje 13:00", deadline: { urgent: true, label: "2h10" }, a: { n: "Brasil", c: "BR" }, b: { n: "Sérvia", c: "RS" }, score: [null, null] },

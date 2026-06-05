@@ -20,7 +20,7 @@ function useIsDesktop() {
   return isDesktop;
 }
 
-const GROUP_KEYS = ["A", "B", "C", "D", "E", "F", "G", "H"];
+const GROUP_KEYS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
 const KO_ROUNDS = [
   { key: "oitavas", label: "Oitavas" },
   { key: "quartas", label: "Quartas" },
