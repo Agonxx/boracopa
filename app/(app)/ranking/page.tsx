@@ -3,12 +3,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Segmented from "@/components/ui/Segmented";
-import PointsPill from "@/components/ui/PointsPill";
-import Avatar from "@/components/ui/Avatar";
 import { useAuthStore } from "@/store/auth";
 import { useBolaoStore } from "@/store/bolao";
 import { createClient } from "@/lib/supabase/client";
-import { Trophy, Users } from "lucide-react";
+import { Trophy } from "lucide-react";
 
 interface RankEntry {
   pos: number; name: string; pts: number; cravadas: number; init: string; you: boolean; user_id: string;
@@ -126,7 +124,6 @@ export default function RankingPage() {
 
   if (!user) return null;
 
-  const initials = user.name.slice(0, 2).toUpperCase();
   const me = rank.find((r) => r.you);
   const top3 = rank.slice(0, 3);
   const rest = rank.slice(3);
@@ -144,110 +141,86 @@ export default function RankingPage() {
     </div>
   );
 
+  const isDesktop = window !== undefined && window.innerWidth >= 1024;
+
   return (
-    <>
-      {/* ── Mobile ── */}
-      <div className="lg:hidden" style={{ display: "flex", flexDirection: "column" }}>
-        <div style={{ flex: 1, padding: "14px 16px 16px", display: "flex", flexDirection: "column", gap: 14 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <h2 style={{ margin: 0, fontFamily: "Anton, sans-serif", fontSize: 21, letterSpacing: 0.4, color: "var(--ink)" }}>Ranking</h2>
-            <span style={{ marginLeft: "auto", fontFamily: "Anton, sans-serif", fontSize: 13, letterSpacing: 0.4, background: "var(--primary-soft)", color: "var(--primary-strong)", borderRadius: 7, padding: "3px 8px" }}>{filter.toUpperCase()}</span>
-          </div>
-          <div style={{ fontSize: 12.5, color: "var(--ink-2)", marginTop: -8, fontWeight: 500 }}>{caption}</div>
-          <Segmented items={RANK_FILTERS} value={filter} onChange={setFilter} />
-          {loading ? <p style={{ fontSize: 13, color: "var(--ink-3)" }}>Carregando...</p> : (
-            <>
-              {top3.length >= 3 && (
+    <div style={{
+      padding: isDesktop ? "26px 30px 40px" : "14px 16px 16px",
+      maxWidth: 900, margin: "0 auto",
+      display: "flex", flexDirection: "column", gap: 14,
+    }}>
+      {/* título */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <h2 style={{ margin: 0, fontFamily: "Anton, sans-serif", fontSize: isDesktop ? 28 : 21, letterSpacing: 0.4, color: "var(--ink)" }}>
+          {isDesktop ? "RANKING" : "Ranking"}
+        </h2>
+        <span style={{ marginLeft: "auto", fontFamily: "Anton, sans-serif", fontSize: 13, letterSpacing: 0.4, background: "var(--primary-soft)", color: "var(--primary-strong)", borderRadius: 7, padding: "3px 8px" }}>
+          {filter.toUpperCase()}
+        </span>
+      </div>
+      <div style={{ fontSize: 12.5, color: "var(--ink-2)", marginTop: -8, fontWeight: 500 }}>{caption}</div>
+
+      <div style={{ maxWidth: 320 }}>
+        <Segmented items={RANK_FILTERS} value={filter} onChange={setFilter} />
+      </div>
+
+      {loading ? <p style={{ fontSize: 13, color: "var(--ink-3)" }}>Carregando...</p> : (
+        <>
+          {/* pódio */}
+          {top3.length >= 3 && (
+            <div style={{ display: isDesktop ? "flex" : "block", gap: 20, alignItems: "stretch" }}>
+              <div style={{ width: isDesktop ? 320 : "100%", flexShrink: 0, background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 20, padding: "20px 20px 0", marginBottom: isDesktop ? 0 : 14 }}>
+                {isDesktop && <div style={{ fontFamily: "Anton, sans-serif", fontSize: 13, letterSpacing: 1, color: "var(--ink-3)", textTransform: "uppercase", marginBottom: 14 }}>Pódio</div>}
                 <div style={{ display: "flex", alignItems: "flex-end", gap: 10 }}>
                   <PodiumCol r={top3[1]} place={2} />
                   <PodiumCol r={top3[0]} place={1} />
                   <PodiumCol r={top3[2]} place={3} />
                 </div>
-              )}
-              {top3.length < 3 && rank.length > 0 && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {rank.map((r) => <RankRow key={r.user_id} r={r} />)}
-                </div>
-              )}
-              {top3.length >= 3 && rest.length > 0 && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                  {rest.map((r) => <RankRow key={r.user_id} r={r} />)}
-                </div>
-              )}
-              {rank.length === 0 && <p style={{ fontSize: 13, color: "var(--ink-3)" }}>Nenhum participante ainda.</p>}
-            </>
-          )}
-        </div>
-
-        {me && (
-          <div style={{ padding: "10px 16px 24px", borderTop: "1px solid var(--line)", background: "var(--surface)" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <span style={{ fontFamily: "Anton, sans-serif", fontSize: 16, color: "var(--primary-strong)" }}>#{me.pos}</span>
-              <RankAvatar init={me.init} size={30} you />
-              <div style={{ flex: 1, fontSize: 13, fontWeight: 700 }}>Sua posição</div>
-              <span style={{ fontSize: 12, fontWeight: 700, fontFamily: "Anton, sans-serif" }}>{me.pts} pts</span>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* ── Desktop ── */}
-      <div className="hidden lg:block" style={{ padding: "26px 30px 40px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 6 }}>
-          <h1 style={{ margin: 0, fontFamily: "Anton, sans-serif", fontSize: 30, letterSpacing: 0.3, lineHeight: 1 }}>RANKING</h1>
-          <span style={{ fontFamily: "Anton, sans-serif", fontSize: 13, letterSpacing: 0.4, background: "var(--primary-soft)", color: "var(--primary-strong)", borderRadius: 7, padding: "3px 8px" }}>{filter.toUpperCase()}</span>
-          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 14 }}>
-            <PointsPill pts={user.pts} initials={initials} showAvatar={false} />
-            <Avatar size={42} initials={initials} ring onClick={() => router.push("/perfil")} />
-          </div>
-        </div>
-        <div style={{ fontSize: 13.5, color: "var(--ink-2)", marginBottom: 18 }}>{caption}</div>
-
-        {loading ? <p style={{ fontSize: 13, color: "var(--ink-3)" }}>Carregando...</p> : (
-          <>
-            {top3.length >= 3 && (
-              <div style={{ display: "flex", gap: 20, alignItems: "stretch", marginBottom: 22 }}>
-                <div style={{ width: 320, flexShrink: 0, background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 20, padding: "20px 20px 0" }}>
-                  <div style={{ fontFamily: "Anton, sans-serif", fontSize: 13, letterSpacing: 1, color: "var(--ink-3)", textTransform: "uppercase", marginBottom: 14 }}>Pódio</div>
-                  <div style={{ display: "flex", alignItems: "flex-end", gap: 10 }}>
-                    <PodiumCol r={top3[1]} place={2} />
-                    <PodiumCol r={top3[0]} place={1} />
-                    <PodiumCol r={top3[2]} place={3} />
-                  </div>
-                </div>
-                {me && (
-                  <div style={{ flex: 1, minWidth: 0, background: "var(--hero-bg)", color: "var(--hero-ink)", borderRadius: 20, padding: "22px 24px", position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                    <div style={{ position: "absolute", inset: 0, opacity: 0.5, background: "repeating-linear-gradient(115deg, transparent 0 28px, var(--hero-stripe) 28px 29px)", pointerEvents: "none" }} />
-                    <div style={{ position: "relative" }}>
-                      <div style={{ fontSize: 12.5, fontWeight: 700, letterSpacing: 1, color: "var(--hero-dim)", textTransform: "uppercase" }}>Sua posição · {activeBolaoName}</div>
-                      <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginTop: 6 }}>
-                        <span style={{ fontFamily: "Anton, sans-serif", fontSize: 56, lineHeight: 0.9 }}>#{me.pos}</span>
-                        <span style={{ fontSize: 15, color: "var(--hero-dim)" }}>de {rank.length} · <b style={{ color: "var(--hero-ink)" }}>{me.pts} pts</b></span>
-                      </div>
+              </div>
+              {isDesktop && me && (
+                <div style={{ flex: 1, minWidth: 0, background: "var(--hero-bg)", color: "var(--hero-ink)", borderRadius: 20, padding: "22px 24px", position: "relative", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                  <div style={{ position: "absolute", inset: 0, opacity: 0.5, background: "repeating-linear-gradient(115deg, transparent 0 28px, var(--hero-stripe) 28px 29px)", pointerEvents: "none" }} />
+                  <div style={{ position: "relative" }}>
+                    <div style={{ fontSize: 12.5, fontWeight: 700, letterSpacing: 1, color: "var(--hero-dim)", textTransform: "uppercase" }}>Sua posição · {activeBolaoName}</div>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginTop: 6 }}>
+                      <span style={{ fontFamily: "Anton, sans-serif", fontSize: 56, lineHeight: 0.9 }}>#{me.pos}</span>
+                      <span style={{ fontSize: 15, color: "var(--hero-dim)" }}>de {rank.length} · <b style={{ color: "var(--hero-ink)" }}>{me.pts} pts</b></span>
                     </div>
                   </div>
-                )}
-              </div>
-            )}
-
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              <div style={{ maxWidth: 320, marginBottom: 4 }}>
-                <Segmented items={RANK_FILTERS} value={filter} onChange={setFilter} />
-              </div>
-              {rank.length > 0 && (
-                <div style={{ display: "grid", gridTemplateColumns: "48px 1fr 110px 110px", gap: 10, padding: "0 16px 2px", fontSize: 11, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase", color: "var(--ink-3)" }}>
-                  <span style={{ textAlign: "center" }}>#</span>
-                  <span>Participante</span>
-                  <span style={{ textAlign: "center" }}>Cravadas</span>
-                  <span style={{ textAlign: "right" }}>Pontos</span>
                 </div>
               )}
-              {rank.map((r) => <DeskRow key={r.user_id} r={r} />)}
-              {rank.length === 0 && <p style={{ fontSize: 13, color: "var(--ink-3)" }}>Nenhum participante ainda.</p>}
             </div>
-          </>
-        )}
-      </div>
-    </>
+          )}
+
+          {/* lista */}
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {isDesktop && rank.length > 0 && (
+              <div style={{ display: "grid", gridTemplateColumns: "48px 1fr 110px 110px", gap: 10, padding: "0 16px 2px", fontSize: 11, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase", color: "var(--ink-3)" }}>
+                <span style={{ textAlign: "center" }}>#</span><span>Participante</span>
+                <span style={{ textAlign: "center" }}>Cravadas</span>
+                <span style={{ textAlign: "right" }}>Pontos</span>
+              </div>
+            )}
+            {isDesktop
+              ? rank.map((r) => <DeskRow key={r.user_id} r={r} />)
+              : rank.slice(top3.length >= 3 ? 3 : 0).map((r) => <RankRow key={r.user_id} r={r} />)
+            }
+            {rank.length === 0 && <p style={{ fontSize: 13, color: "var(--ink-3)" }}>Nenhum participante ainda.</p>}
+          </div>
+        </>
+      )}
+
+      {/* barra "sua posição" mobile */}
+      {!isDesktop && me && (
+        <div style={{ position: "sticky", bottom: 60, left: 0, right: 0, padding: "10px 0", borderTop: "1px solid var(--line)", background: "var(--surface)", margin: "0 -16px -20px" }}>
+          <div style={{ padding: "0 16px", display: "flex", alignItems: "center", gap: 12 }}>
+            <span style={{ fontFamily: "Anton, sans-serif", fontSize: 16, color: "var(--primary-strong)" }}>#{me.pos}</span>
+            <RankAvatar init={me.init} size={30} you />
+            <div style={{ flex: 1, fontSize: 13, fontWeight: 700 }}>Sua posição</div>
+            <span style={{ fontSize: 12, fontWeight: 700, fontFamily: "Anton, sans-serif" }}>{me.pts} pts</span>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

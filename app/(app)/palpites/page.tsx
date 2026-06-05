@@ -6,8 +6,6 @@ import MatchCard from "@/components/match/MatchCard";
 import Segmented from "@/components/ui/Segmented";
 import ScoringNote from "@/components/match/ScoringNote";
 import BracketPeek from "@/components/match/BracketPeek";
-import PointsPill from "@/components/ui/PointsPill";
-import Avatar from "@/components/ui/Avatar";
 import { useAuthStore } from "@/store/auth";
 import { GROUPS, GROUP_KEYS, KO, KO_ROUNDS } from "@/lib/mock";
 
@@ -44,7 +42,6 @@ export default function PalpitesPage() {
 
   if (!user) return null;
 
-  const initials = user.name.slice(0, 2).toUpperCase();
   const isKO = phase === "matamata";
   const groupList = GROUPS[group] ?? GROUPS.A;
   const koList = KO[round] ?? [];
@@ -53,35 +50,20 @@ export default function PalpitesPage() {
   return (
     <div style={{
       padding: isDesktop ? "26px 30px 40px" : "14px 16px 20px",
-      maxWidth: isDesktop ? 960 : undefined,
+      maxWidth: 900,
+      margin: "0 auto",
       display: "flex", flexDirection: "column", gap: isDesktop ? 18 : 14,
     }}>
 
-      {/* cabeçalho desktop */}
-      {isDesktop && (
-        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <h1 style={{ margin: 0, fontFamily: "Anton, sans-serif", fontSize: 30, letterSpacing: 0.3, lineHeight: 1 }}>
-            PALPITES
-          </h1>
-          <span style={chip}>{isKO ? "MATA-MATA" : "FASE DE GRUPOS"}</span>
-          <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 14 }}>
-            <PointsPill pts={user.pts} initials={initials} showAvatar={false} />
-            <Avatar size={42} initials={initials} ring onClick={() => router.push("/perfil")} />
-          </div>
-        </div>
-      )}
-
-      {/* cabeçalho mobile */}
-      {!isDesktop && (
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-          <h2 style={{ margin: 0, fontFamily: "Anton, sans-serif", fontSize: 21, letterSpacing: 0.4, color: "var(--ink)" }}>
-            Palpites
-          </h2>
-          <span style={{ ...chip, marginLeft: "auto" }}>
-            {isKO ? "MATA-MATA" : "FASE DE GRUPOS"}
-          </span>
-        </div>
-      )}
+      {/* título */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <h2 style={{ margin: 0, fontFamily: "Anton, sans-serif", fontSize: isDesktop ? 28 : 21, letterSpacing: 0.4, color: "var(--ink)" }}>
+          {isDesktop ? "PALPITES" : "Palpites"}
+        </h2>
+        <span style={{ ...chip, marginLeft: "auto" }}>
+          {isKO ? "MATA-MATA" : "FASE DE GRUPOS"}
+        </span>
+      </div>
 
       {/* switch de fase */}
       <div style={{ maxWidth: isDesktop ? 320 : undefined }}>
