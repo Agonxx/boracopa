@@ -1,7 +1,7 @@
 export interface Team { n: string; c: string }
 export interface Deadline { urgent: boolean; label: string }
 export interface Match {
-  id: number; grp: string; time: string;
+  id: string | number; grp: string; time: string;
   deadline?: Deadline; done?: boolean; editUntil?: string;
   upcoming?: boolean; knockout?: boolean; advance?: string;
   a: Team; b: Team; score: [number | null, number | null];
