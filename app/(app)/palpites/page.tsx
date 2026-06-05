@@ -80,7 +80,7 @@ export default function PalpitesPage() {
 
           {/* seletor de grupos */}
           <div>
-            <Segmented items={GROUP_KEYS} value={group} onChange={setGroup} scroll />
+            <Segmented items={GROUP_KEYS} value={group} onChange={setGroup} />
           </div>
 
           {isDesktop && (

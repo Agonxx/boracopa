@@ -27,53 +27,58 @@ export default function Header({
 
   return (
     <header
-      className="hidden lg:flex"
+      className="hidden lg:block"
       style={{
-        height: 60, alignItems: "center", gap: 16, padding: "0 24px",
+        height: 60,
         background: "var(--surface)", borderBottom: "1px solid var(--line)",
         position: "sticky", top: 0, zIndex: 20, flexShrink: 0,
       }}
     >
-      {/* wordmark + bolão switcher */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
-        <Wordmark />
-        <BolaoSwitcher compact />
-      </div>
+      <div style={{
+        maxWidth: 900, margin: "0 auto", height: "100%",
+        display: "flex", alignItems: "center", gap: 16, padding: "0 30px",
+      }}>
+        {/* wordmark + bolão switcher */}
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
+          <Wordmark />
+          <BolaoSwitcher compact />
+        </div>
 
-      {/* nav central */}
-      <nav style={{ display: "flex", alignItems: "center", gap: 2 }}>
-        {navItems.map(({ href, label }) => {
-          const active = pathname.startsWith(href);
-          return (
-            <Link key={href} href={href} style={{
+        {/* nav central */}
+        <nav style={{ display: "flex", alignItems: "center", gap: 2 }}>
+          {navItems.map(({ href, label }) => {
+            const active = pathname.startsWith(href);
+            return (
+              <Link key={href} href={href} style={{
+                padding: "7px 14px", borderRadius: 10, textDecoration: "none",
+                fontFamily: "Archivo, sans-serif", fontWeight: active ? 800 : 600, fontSize: 14,
+                background: active ? "var(--primary)" : "transparent",
+                color: active ? "var(--on-primary)" : "var(--ink-2)",
+                boxShadow: active ? "0 3px 0 var(--primary-strong)" : "none",
+                transition: "all .12s",
+              }}>
+                {label}
+              </Link>
+            );
+          })}
+          {user.isSuperAdmin && (
+            <Link href="/adm" style={{
               padding: "7px 14px", borderRadius: 10, textDecoration: "none",
-              fontFamily: "Archivo, sans-serif", fontWeight: active ? 800 : 600, fontSize: 14,
-              background: active ? "var(--primary)" : "transparent",
-              color: active ? "var(--on-primary)" : "var(--ink-2)",
-              boxShadow: active ? "0 3px 0 var(--primary-strong)" : "none",
+              fontFamily: "Archivo, sans-serif", fontWeight: pathname.startsWith("/adm") ? 800 : 600, fontSize: 14,
+              background: pathname.startsWith("/adm") ? "var(--primary)" : "transparent",
+              color: pathname.startsWith("/adm") ? "var(--on-primary)" : "var(--primary-strong)",
               transition: "all .12s",
             }}>
-              {label}
+              ADM
             </Link>
-          );
-        })}
-        {user.isSuperAdmin && (
-          <Link href="/adm" style={{
-            padding: "7px 14px", borderRadius: 10, textDecoration: "none",
-            fontFamily: "Archivo, sans-serif", fontWeight: pathname.startsWith("/adm") ? 800 : 600, fontSize: 14,
-            background: pathname.startsWith("/adm") ? "var(--primary)" : "transparent",
-            color: pathname.startsWith("/adm") ? "var(--on-primary)" : "var(--primary-strong)",
-            transition: "all .12s",
-          }}>
-            ADM
-          </Link>
-        )}
-      </nav>
+          )}
+        </nav>
 
-      {/* direita: pts + avatar */}
-      <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-        <PointsPill pts={user.pts} initials={initials} showAvatar={false} />
-        <Avatar size={36} initials={initials} ring onClick={onOpenProfile} />
+        {/* direita: pts + avatar */}
+        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+          <PointsPill pts={user.pts} initials={initials} showAvatar={false} />
+          <Avatar size={36} initials={initials} ring onClick={onOpenProfile} />
+        </div>
       </div>
     </header>
   );
