@@ -100,6 +100,17 @@ export default function AdmPage() {
   }
 
   // resultados
+  const [recalculating, setRecalculating] = useState(false);
+
+  async function handleRecalculate() {
+    if (!window.confirm("Zerar todos os pontos e recalcular a partir dos resultados publicados?")) return;
+    setRecalculating(true);
+    const { error } = await supabase.rpc("recalculate_all_points");
+    setRecalculating(false);
+    setSavedMsg(error ? `Erro: ${error.message}` : "Pontos recalculados com sucesso!");
+    setTimeout(() => setSavedMsg(""), 4000);
+  }
+
   const [resMatch, setResMatch] = useState<string>("");
   const [resA, setResA] = useState("");
   const [resB, setResB] = useState("");
@@ -190,9 +201,9 @@ export default function AdmPage() {
       )}
 
       {/* tabs */}
-      <div style={{ display: "flex", gap: 5, background: "var(--surface)", border: "1px solid var(--line-strong)", borderRadius: 14, padding: 5, width: "fit-content" }}>
+      <div style={{ display: "flex", gap: 4, background: "var(--surface)", border: "1px solid var(--line-strong)", borderRadius: 14, padding: 4, width: "100%", overflowX: "auto" }}>
         {(["partidas", "resultados", "importar", "usuarios"] as const).map((t) => (
-          <button key={t} onClick={() => { setTab(t); if (t === "usuarios") fetchUsers(); }} style={{ padding: "8px 18px", borderRadius: 10, border: "none", cursor: "pointer", fontFamily: "Archivo, sans-serif", fontWeight: 800, fontSize: 13.5, background: tab === t ? "var(--ink)" : "transparent", color: tab === t ? "var(--surface)" : "var(--ink-2)", transition: "all .12s", whiteSpace: "nowrap" }}>
+          <button key={t} onClick={() => { setTab(t); if (t === "usuarios") fetchUsers(); }} style={{ flex: 1, minWidth: "fit-content", padding: "9px 14px", borderRadius: 10, border: "none", cursor: "pointer", fontFamily: "Archivo, sans-serif", fontWeight: 800, fontSize: 13.5, background: tab === t ? "var(--ink)" : "transparent", color: tab === t ? "var(--surface)" : "var(--ink-2)", transition: "all .12s", whiteSpace: "nowrap" }}>
             {t === "partidas" ? "Partidas" : t === "resultados" ? "Resultados" : t === "importar" ? "Importar" : "Usuários"}
           </button>
         ))}
@@ -298,7 +309,14 @@ export default function AdmPage() {
           </form>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <p style={{ fontFamily: "Anton, sans-serif", fontSize: 14, letterSpacing: 1, color: "var(--ink-3)", textTransform: "uppercase", margin: 0 }}>Resultados publicados</p>
+            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <p style={{ fontFamily: "Anton, sans-serif", fontSize: 14, letterSpacing: 1, color: "var(--ink-3)", textTransform: "uppercase", margin: 0 }}>
+                Resultados publicados ({matches.filter(m => m.status === "finished").length})
+              </p>
+              <button onClick={handleRecalculate} disabled={recalculating} style={{ marginLeft: "auto", height: 34, padding: "0 14px", borderRadius: 9, border: "1.5px solid var(--line-strong)", background: "transparent", fontFamily: "Archivo, sans-serif", fontWeight: 700, fontSize: 12.5, color: "var(--ink-2)", cursor: recalculating ? "default" : "pointer", whiteSpace: "nowrap", opacity: recalculating ? 0.6 : 1 }}>
+                {recalculating ? "Recalculando..." : "↺ Recalcular pontos"}
+              </button>
+            </div>
             {matches.filter(m => m.status === "finished").map(m => (
               <div key={m.id} style={{ background: "var(--surface)", borderRadius: 14, border: "1px solid var(--line)", padding: "12px 14px", display: "flex", alignItems: "center", gap: 12 }}>
                 <div style={{ flex: 1 }}>
@@ -308,6 +326,9 @@ export default function AdmPage() {
                 <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--ink-2)", background: "var(--app-bg)", borderRadius: 8, padding: "3px 8px" }}>Finalizado</span>
               </div>
             ))}
+            {matches.filter(m => m.status === "finished").length === 0 && (
+              <p style={{ fontSize: 13, color: "var(--ink-3)" }}>Nenhum resultado publicado ainda.</p>
+            )}
           </div>
         </>
       )}
