@@ -163,7 +163,9 @@ export async function GET() {
       code_a: (m.homeTeam.tla ?? "???").toUpperCase(),
       code_b: (m.awayTeam.tla ?? "???").toUpperCase(),
       match_date: new Date(m.utcDate).toISOString(),
-      status: STATUS_MAP[m.status] ?? "upcoming",
+      status: m.stage === "GROUP_STAGE" && (m.status === "SCHEDULED" || m.status === "TIMED")
+        ? "open"
+        : (STATUS_MAP[m.status] ?? "upcoming"),
       result_a: null as number | null,
       result_b: null as number | null,
     }));

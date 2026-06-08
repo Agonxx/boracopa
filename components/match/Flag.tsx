@@ -1,7 +1,3 @@
-"use client";
-
-import { useState } from "react";
-
 const TLA_TO_ISO2: Record<string, string> = {
   // América do Sul
   BRA: "br", ARG: "ar", URU: "uy", COL: "co", ECU: "ec",
@@ -28,24 +24,33 @@ const TLA_TO_ISO2: Record<string, string> = {
   IRQ: "iq", JOR: "jo", OMA: "om", BHR: "bh", UAE: "ae",
 };
 
+// Emojis especiais para nações do Reino Unido
+const SPECIAL_EMOJI: Record<string, string> = {
+  "gb-eng": "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
+  "gb-sct": "🏴󠁧󠁢󠁳󠁣󠁴󠁿",
+  "gb-wls": "🏴󠁧󠁢󠁷󠁬󠁳󠁿",
+};
+
+function toEmoji(iso2: string): string {
+  if (SPECIAL_EMOJI[iso2]) return SPECIAL_EMOJI[iso2];
+  return [...iso2.toUpperCase()]
+    .map((c) => String.fromCodePoint(0x1f1e6 + c.charCodeAt(0) - 65))
+    .join("");
+}
+
 export default function Flag({ code, size = 34 }: { code: string; size?: number }) {
-  const [err, setErr] = useState(false);
   const iso2 = TLA_TO_ISO2[code?.toUpperCase()];
 
-  if (iso2 && !err) {
+  if (iso2) {
     return (
       <div style={{
-        width: size, height: size, borderRadius: "50%",
-        overflow: "hidden", flexShrink: 0,
+        width: size, height: size, borderRadius: "50%", flexShrink: 0,
         border: "1.5px solid var(--line-strong)",
-        boxShadow: "inset 0 0 0 1px rgba(0,0,0,.06)",
+        display: "grid", placeItems: "center",
+        fontSize: size * 0.72, lineHeight: 1,
+        overflow: "hidden", background: "var(--surface)",
       }}>
-        <img
-          src={`https://flagcdn.com/w${size * 2}/${iso2}.png`}
-          alt={code}
-          onError={() => setErr(true)}
-          style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center", display: "block" }}
-        />
+        {toEmoji(iso2)}
       </div>
     );
   }
