@@ -3,15 +3,18 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 
-function useCountdown(seconds: number) {
-  const [t, setT] = useState(seconds);
+function useCountdown(targetDate: string | null) {
+  const [secs, setSecs] = useState(0);
   useEffect(() => {
-    const id = setInterval(() => setT((x) => (x > 0 ? x - 1 : 0)), 1000);
+    if (!targetDate) { setSecs(0); return; }
+    const tick = () => setSecs(Math.max(0, Math.floor((new Date(targetDate).getTime() - Date.now()) / 1000)));
+    tick();
+    const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, []);
-  const h = String(Math.floor(t / 3600)).padStart(2, "0");
-  const m = String(Math.floor((t % 3600) / 60)).padStart(2, "0");
-  const s = String(t % 60).padStart(2, "0");
+  }, [targetDate]);
+  const h = String(Math.floor(secs / 3600)).padStart(2, "0");
+  const m = String(Math.floor((secs % 3600) / 60)).padStart(2, "0");
+  const s = String(secs % 60).padStart(2, "0");
   return [h, m, s];
 }
 
@@ -22,8 +25,19 @@ function Colon() {
   return <span style={{ fontSize: 42, color: "var(--hero-dim)", padding: "0 2px", position: "relative", top: -2 }}>:</span>;
 }
 
-export default function Hero({ wide = false, open = 3 }: { wide?: boolean; open?: number }) {
-  const [h, m, s] = useCountdown(2 * 3600 + 10 * 60 + 42);
+export default function Hero({
+  wide = false,
+  open = 0,
+  targetDate = null,
+  phaseLabel = "",
+}: {
+  wide?: boolean;
+  open?: number;
+  targetDate?: string | null;
+  phaseLabel?: string;
+}) {
+  const [h, m, s] = useCountdown(targetDate);
+  const isOpen = open > 0;
 
   return (
     <div style={{
@@ -35,17 +49,37 @@ export default function Hero({ wide = false, open = 3 }: { wide?: boolean; open?
       <div style={{ position: "relative", display: "flex", flexDirection: wide ? "row" : "column", gap: wide ? 28 : 16, alignItems: wide ? "center" : "stretch" }}>
         <div style={{ flex: 1 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 8 }}>
-            <span style={{ width: 8, height: 8, borderRadius: "50%", background: "var(--live)", boxShadow: "0 0 0 3px var(--live-soft)" }} />
-            <span style={{ fontFamily: "Anton, sans-serif", fontSize: 13, letterSpacing: 1.5, color: "var(--hero-dim)" }}>PRÓXIMO PRAZO · GRUPO C</span>
+            <span style={{
+              width: 8, height: 8, borderRadius: "50%",
+              background: isOpen ? "var(--live)" : "var(--hero-dim)",
+              boxShadow: isOpen ? "0 0 0 3px var(--live-soft)" : "none",
+            }} />
+            <span style={{ fontFamily: "Anton, sans-serif", fontSize: 13, letterSpacing: 1.5, color: "var(--hero-dim)" }}>
+              {isOpen
+                ? `PRÓXIMO PRAZO${phaseLabel ? ` · ${phaseLabel}` : ""}`
+                : phaseLabel ? `EM BREVE · ${phaseLabel}` : "COPA DO MUNDO 2026"}
+            </span>
           </div>
-          <div style={{ display: "flex", alignItems: "flex-end", gap: 4, fontFamily: "Anton, sans-serif", lineHeight: 0.85 }}>
-            <Seg v={h} /><Colon /><Seg v={m} /><Colon /><Seg v={s} />
-          </div>
+
+          {targetDate ? (
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 4, fontFamily: "Anton, sans-serif", lineHeight: 0.85 }}>
+              <Seg v={h} /><Colon /><Seg v={m} /><Colon /><Seg v={s} />
+            </div>
+          ) : (
+            <div style={{ fontFamily: "Anton, sans-serif", fontSize: 28, lineHeight: 1.2, color: "var(--hero-ink)", paddingBottom: 4 }}>
+              Aguardando próxima rodada
+            </div>
+          )}
+
           <div style={{ fontSize: 13.5, color: "var(--hero-dim)", marginTop: 10, fontWeight: 500 }}>
-            até o Brasil entrar em campo. Você tem{" "}
-            <b style={{ color: "var(--hero-ink)" }}>{open} jogos</b> em aberto nesta rodada.
+            {isOpen
+              ? <>até o prazo fechar. Você tem{" "}<b style={{ color: "var(--hero-ink)" }}>{open} jogo{open !== 1 ? "s" : ""}</b> em aberto.</>
+              : targetDate
+                ? "Acompanhe o prazo e palpite a tempo."
+                : "Os próximos jogos aparecerão aqui em breve."}
           </div>
         </div>
+
         <Link href="/palpites" style={{
           background: "var(--primary)", color: "var(--on-primary)", border: "none",
           borderRadius: 14, padding: wide ? "16px 26px" : "14px",
@@ -57,7 +91,7 @@ export default function Hero({ wide = false, open = 3 }: { wide?: boolean; open?
           <svg width={18} height={18} viewBox="0 0 24 24" fill="var(--on-primary)" stroke="none">
             <path d="M13 3 5 13h6l-1 8 8-10h-6l1-8Z" />
           </svg>
-          Palpitar agora
+          {isOpen ? "Palpitar agora" : "Ver palpites"}
         </Link>
       </div>
     </div>
