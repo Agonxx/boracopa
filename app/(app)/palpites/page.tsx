@@ -27,7 +27,7 @@ const KO_ROUNDS = [
   { key: "semi", label: "Semifinal" },
   { key: "final", label: "Final" },
 ];
-const PHASE_TABS = [
+const PHASE_TABS_ALL = [
   { key: "grupos", label: "Fase de grupos" },
   { key: "matamata", label: "Mata-mata" },
 ];
@@ -100,6 +100,7 @@ export default function PalpitesPage() {
   const supabase = createClient();
 
   const [phase, setPhase] = useState("grupos");
+  const phaseTabs = user?.isSuperAdmin ? PHASE_TABS_ALL : PHASE_TABS_ALL.slice(0, 1);
   const [group, setGroup] = useState("A");
   const [round, setRound] = useState("oitavas");
   const [matches, setMatches] = useState<DbMatch[]>([]);
@@ -160,7 +161,7 @@ export default function PalpitesPage() {
         </span>
       </div>
 
-      <div><Segmented items={PHASE_TABS} value={phase} onChange={setPhase} /></div>
+      <div><Segmented items={phaseTabs} value={phase} onChange={setPhase} /></div>
 
       {!isKO ? (
         <>
