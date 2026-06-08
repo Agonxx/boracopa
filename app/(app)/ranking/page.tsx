@@ -102,15 +102,58 @@ export default function RankingPage() {
       .select("id, name")
       .in("id", userIds);
 
+    let ptsByUser: Record<string, { pts: number; cravadas: number }> = {};
+
+    if (filter === "Geral") {
+      for (const m of memberRows) ptsByUser[m.user_id] = { pts: m.pts ?? 0, cravadas: m.cravadas ?? 0 };
+    } else {
+      const phaseFilter = filter === "Fase de grupos"
+        ? ["groups"]
+        : ["r16", "quarter", "semi", "final"];
+
+      const { data: finishedMatches } = await supabase
+        .from("matches")
+        .select("id, result_a, result_b")
+        .eq("status", "finished")
+        .in("phase", phaseFilter);
+
+      if (finishedMatches && finishedMatches.length > 0) {
+        const matchIds = finishedMatches.map((m) => m.id);
+        const resultMap = Object.fromEntries(
+          finishedMatches.map((m) => [m.id, { ra: m.result_a, rb: m.result_b }])
+        );
+        const { data: preds } = await supabase
+          .from("predictions")
+          .select("user_id, match_id, score_a, score_b")
+          .in("user_id", userIds)
+          .in("match_id", matchIds);
+
+        for (const p of preds ?? []) {
+          const r = resultMap[p.match_id];
+          if (!r || r.ra === null || r.rb === null) continue;
+          const cravada = p.score_a === r.ra && p.score_b === r.rb;
+          const win = (a: number, b: number) => (a > b ? 1 : a < b ? -1 : 0);
+          const acerto = win(p.score_a, p.score_b) === win(r.ra, r.rb);
+          const pts = cravada ? 5 : acerto ? 3 : 0;
+          if (!ptsByUser[p.user_id]) ptsByUser[p.user_id] = { pts: 0, cravadas: 0 };
+          ptsByUser[p.user_id].pts += pts;
+          if (cravada) ptsByUser[p.user_id].cravadas += 1;
+        }
+      }
+      for (const uid of userIds) {
+        if (!ptsByUser[uid]) ptsByUser[uid] = { pts: 0, cravadas: 0 };
+      }
+    }
+
     const entries: RankEntry[] = (profiles ?? [])
       .map((p) => {
-        const member = memberRows.find((m) => m.user_id === p.id);
+        const data = ptsByUser[p.id] ?? { pts: 0, cravadas: 0 };
         return {
           pos: 0,
           user_id: p.id,
           name: p.name,
-          pts: member?.pts ?? 0,
-          cravadas: member?.cravadas ?? 0,
+          pts: data.pts,
+          cravadas: data.cravadas,
           init: p.name.slice(0, 2).toUpperCase(),
           you: p.id === user.id,
         };
@@ -120,7 +163,7 @@ export default function RankingPage() {
 
     setRank(entries);
     setLoading(false);
-  }, [activeBolaoId, user?.id]);
+  }, [activeBolaoId, filter, user?.id]);
 
   useEffect(() => { fetchRanking(); }, [fetchRanking]);
 
