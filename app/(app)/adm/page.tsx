@@ -437,14 +437,14 @@ export default function AdmPage() {
           <div style={{ borderTop: "1px solid var(--line)", paddingTop: 16, marginTop: 4 }}>
             <p style={{ fontFamily: "Anton, sans-serif", fontSize: 12, letterSpacing: 1, color: "var(--ink-3)", textTransform: "uppercase", margin: "0 0 10px" }}>Zona de perigo</p>
             <button
-              onClick={() => {
-                if (window.confirm("Apagar TODAS as partidas e palpites do banco? Esta ação não pode ser desfeita.")) {
-                  supabase.from("matches").delete().neq("id", "00000000-0000-0000-0000-000000000000")
-                    .then(({ error }) => {
-                      if (error) setImportMsg(`Erro: ${error.message}`);
-                      else { setImportMsg("✓ Todas as partidas apagadas."); fetchMatches(); }
-                    });
-                }
+              onClick={async () => {
+                if (!window.confirm("Apagar TODAS as partidas, palpites e zerar pontos? Esta ação não pode ser desfeita.")) return;
+                // 1. Zera pts e cravadas de todos os membros
+                await supabase.from("bolao_members").update({ pts: 0, cravadas: 0 }).gt("pts", -1);
+                // 2. Apaga partidas (palpites em cascata via FK)
+                const { error } = await supabase.from("matches").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+                if (error) setImportMsg(`Erro: ${error.message}`);
+                else { setImportMsg("✓ Partidas apagadas e pontos zerados."); fetchMatches(); }
               }}
               style={{ height: 42, padding: "0 20px", borderRadius: 11, border: "1.5px solid #e74c3c", background: "transparent", color: "#e74c3c", fontFamily: "Archivo, sans-serif", fontWeight: 800, fontSize: 13.5, cursor: "pointer" }}>
               Apagar todas as partidas
