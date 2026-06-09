@@ -98,6 +98,7 @@ export default function BolaoDetailPage() {
             {bolao.invite_code}
           </span>
           <CopyButton text={bolao.invite_code} label="Copiar código" />
+          <CopyButton text={`${window.location.origin}/convite/${bolao.invite_code}`} label="Copiar link" />
           <span style={{ fontSize: 12.5, color: "var(--ink-3)", fontWeight: 600, display: "flex", alignItems: "center", gap: 5 }}>
             <Users size={13} strokeWidth={2} /> {members.length} participante{members.length !== 1 ? "s" : ""}
           </span>
