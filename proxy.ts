@@ -25,7 +25,8 @@ export async function proxy(request: NextRequest) {
   const { data: { session } } = await supabase.auth.getSession();
   const { pathname } = request.nextUrl;
 
-  const isAuthPage = pathname === "/login" || pathname === "/register";
+  const isAuthPage = pathname === "/login" || pathname === "/register"
+    || pathname === "/reset-password" || pathname.startsWith("/convite/");
 
   if (!session && !isAuthPage) {
     return NextResponse.redirect(new URL("/login", request.url));

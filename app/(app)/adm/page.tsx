@@ -63,7 +63,7 @@ export default function AdmPage() {
   }
 
   async function handleResetPassword(email: string, userId: string) {
-    const origin = process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin;
+    const origin = (process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin).replace(/\/$/, "");
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${origin}/reset-password`,
     });

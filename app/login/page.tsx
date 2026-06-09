@@ -89,7 +89,7 @@ function LoginForm({ error, onSubmit }: { error: boolean; onSubmit: (u: string, 
     setForgotStatus("sending");
     const { createClient } = await import("@/lib/supabase/client");
     const supabase = createClient();
-    const origin = process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin;
+    const origin = (process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin).replace(/\/$/, "");
     const { error: err } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
       redirectTo: `${origin}/reset-password`,
     });
