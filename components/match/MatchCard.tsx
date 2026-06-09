@@ -93,6 +93,19 @@ function AdvanceSelector({ a, b, value, onChange }: { a: Team; b: Team; value: s
   );
 }
 
+function calcResultType(pred: [number, number], result: [number, number]): "cravada" | "acerto" | "errou" {
+  if (pred[0] === result[0] && pred[1] === result[1]) return "cravada";
+  const win = (a: number, b: number) => a > b ? 1 : a < b ? -1 : 0;
+  if (win(pred[0], pred[1]) === win(result[0], result[1])) return "acerto";
+  return "errou";
+}
+
+const RESULT_STYLE = {
+  cravada: { bg: "var(--primary-soft)", color: "var(--primary-strong)", label: "Cravada", pts: "+5 pts" },
+  acerto:  { bg: "#e8f5e9", color: "#2e7d32",            label: "Acerto",  pts: "+3 pts" },
+  errou:   { bg: "var(--app-bg)", color: "var(--ink-3)", label: "Errou",   pts: "0 pts"  },
+};
+
 export default function MatchCard({ m, compact, knockout, onSave }: { m: Match; compact?: boolean; knockout?: boolean; onSave?: (a: number, b: number) => void }) {
   const [a, setA] = useState<number | null>(m.score[0]);
   const [b, setB] = useState<number | null>(m.score[1]);
@@ -200,18 +213,45 @@ export default function MatchCard({ m, compact, knockout, onSave }: { m: Match; 
             {saving ? "Salvando..." : "Confirmar palpite →"}
           </button>
         )}
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          {locked
-            ? <span style={{ fontSize: 12, color: "var(--ink-2)" }}>Editável até <b style={{ color: "var(--ink)" }}>{m.editUntil}</b></span>
-            : confirmed
-              ? <span style={{ fontSize: 12, color: "var(--primary-strong)", fontWeight: 700, display: "flex", alignItems: "center", gap: 5 }}>
-                  <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="var(--primary-strong)" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4 10-10" /></svg>
-                  Palpite confirmado · <button onClick={() => setConfirmed(false)} style={{ background: "none", border: "none", color: "var(--ink-2)", fontSize: 12, cursor: "pointer", padding: 0, fontFamily: "Archivo, sans-serif", fontWeight: 600 }}>editar</button>
-                </span>
-              : <span style={{ fontSize: 12, color: "var(--ink-2)" }}>
-                  {filled ? "Revise e confirme o palpite" : "Defina o placar para palpitar"}
-                </span>}
-          <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--ink-3)", fontWeight: 600, fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>+3 acerto · +5 cravada</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          {m.finished ? (
+            m.myPred && m.myPred[0] != null && m.myPred[1] != null && m.score[0] != null && m.score[1] != null ? (
+              (() => {
+                const tipo = calcResultType([m.myPred[0]!, m.myPred[1]!], [m.score[0]!, m.score[1]!]);
+                const st = RESULT_STYLE[tipo];
+                return (
+                  <>
+                    <span style={{ fontSize: 12, color: "var(--ink-2)" }}>
+                      Seu palpite: <b style={{ color: "var(--ink)", fontVariantNumeric: "tabular-nums" }}>{m.myPred[0]} × {m.myPred[1]}</b>
+                    </span>
+                    <span style={{ marginLeft: "auto", fontSize: 11.5, fontWeight: 800, background: st.bg, color: st.color, borderRadius: 20, padding: "3px 10px", whiteSpace: "nowrap" }}>
+                      {st.label} {st.pts}
+                    </span>
+                  </>
+                );
+              })()
+            ) : (
+              <span style={{ fontSize: 12, color: "var(--ink-3)" }}>Sem palpite neste jogo</span>
+            )
+          ) : locked ? (
+            <>
+              <span style={{ fontSize: 12, color: "var(--ink-2)" }}>Palpite encerrado</span>
+              <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--ink-3)", fontWeight: 600, flexShrink: 0 }}>+3 acerto · +5 cravada</span>
+            </>
+          ) : confirmed ? (
+            <span style={{ fontSize: 12, color: "var(--primary-strong)", fontWeight: 700, display: "flex", alignItems: "center", gap: 5 }}>
+              <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="var(--primary-strong)" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round"><path d="M5 13l4 4 10-10" /></svg>
+              Palpite confirmado · <button onClick={() => setConfirmed(false)} style={{ background: "none", border: "none", color: "var(--ink-2)", fontSize: 12, cursor: "pointer", padding: 0, fontFamily: "Archivo, sans-serif", fontWeight: 600 }}>editar</button>
+              <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--ink-3)", fontWeight: 600, flexShrink: 0 }}>+3 acerto · +5 cravada</span>
+            </span>
+          ) : (
+            <>
+              <span style={{ fontSize: 12, color: "var(--ink-2)" }}>
+                {filled ? "Revise e confirme o palpite" : "Defina o placar para palpitar"}
+              </span>
+              <span style={{ marginLeft: "auto", fontSize: 11, color: "var(--ink-3)", fontWeight: 600, fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>+3 acerto · +5 cravada</span>
+            </>
+          )}
         </div>
       </div>
     </div>

@@ -5,6 +5,8 @@ export interface Match {
   deadline?: Deadline; done?: boolean; editUntil?: string;
   upcoming?: boolean; knockout?: boolean; advance?: string;
   a: Team; b: Team; score: [number | null, number | null];
+  finished?: boolean;
+  myPred?: [number | null, number | null];
 }
 
 /* ── Home ── */

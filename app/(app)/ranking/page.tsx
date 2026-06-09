@@ -7,6 +7,7 @@ import { useAuthStore } from "@/store/auth";
 import { useBolaoStore } from "@/store/bolao";
 import { createClient } from "@/lib/supabase/client";
 import { Trophy } from "lucide-react";
+import Skeleton from "@/components/ui/Skeleton";
 
 interface RankEntry {
   pos: number; name: string; pts: number; cravadas: number; init: string; you: boolean; user_id: string;
@@ -209,7 +210,18 @@ export default function RankingPage() {
         <Segmented items={RANK_FILTERS} value={filter} onChange={setFilter} />
       </div>
 
-      {loading ? <p style={{ fontSize: 13, color: "var(--ink-3)" }}>Carregando...</p> : (
+      {loading ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {[...Array(5)].map((_, i) => (
+            <div key={i} style={{ background: "var(--surface)", borderRadius: 14, padding: "10px 13px", border: "1px solid var(--line)", display: "flex", alignItems: "center", gap: 12 }}>
+              <Skeleton w={22} h={22} radius={4} />
+              <Skeleton w={36} h={36} radius="50%" />
+              <Skeleton w="50%" h={16} radius={6} />
+              <div style={{ marginLeft: "auto" }}><Skeleton w={44} h={22} radius={6} /></div>
+            </div>
+          ))}
+        </div>
+      ) : (
         <>
           {/* pódio */}
           {top3.length >= 3 && (

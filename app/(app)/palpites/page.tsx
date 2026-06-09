@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import MatchCard from "@/components/match/MatchCard";
 import Segmented from "@/components/ui/Segmented";
 import ScoringNote from "@/components/match/ScoringNote";
+import Skeleton from "@/components/ui/Skeleton";
 import BracketPeek from "@/components/match/BracketPeek";
 import { useAuthStore } from "@/store/auth";
 import { createClient } from "@/lib/supabase/client";
@@ -86,6 +87,8 @@ function toCardMatch(m: DbMatch, pred?: Prediction) {
     advance: pred?.advance_code ?? undefined,
     deadline: computeDeadline(m.match_date, m.status),
     editUntil: finished ? "—" : undefined,
+    finished,
+    myPred: finished ? [pred?.score_a ?? null, pred?.score_b ?? null] as [number | null, number | null] : undefined,
   };
 }
 
@@ -183,7 +186,14 @@ export default function PalpitesPage() {
           )}
 
           {loading ? (
-            <p style={{ fontSize: 13, color: "var(--ink-3)" }}>Carregando...</p>
+            <div style={{ display: "grid", gridTemplateColumns: isDesktop ? "1fr 1fr" : "1fr", gap: isDesktop ? 16 : 12 }}>
+              {[...Array(4)].map((_, i) => (
+                <div key={i} style={{ background: "var(--surface)", borderRadius: 20, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 12, border: "1px solid var(--line)" }}>
+                  <div style={{ display: "flex", gap: 8 }}><Skeleton w={60} h={24} /><Skeleton w={100} h={24} /></div>
+                  <Skeleton h={44} radius={10} /><Skeleton h={44} radius={10} />
+                </div>
+              ))}
+            </div>
           ) : cardMatches.length === 0 ? (
             <p style={{ fontSize: 13, color: "var(--ink-3)" }}>Nenhuma partida cadastrada para o Grupo {group} ainda.</p>
           ) : (
@@ -219,7 +229,14 @@ export default function PalpitesPage() {
           <div><Segmented items={KO_ROUNDS} value={round} onChange={setRound} /></div>
 
           {loading ? (
-            <p style={{ fontSize: 13, color: "var(--ink-3)" }}>Carregando...</p>
+            <div style={{ display: "grid", gridTemplateColumns: isDesktop ? "1fr 1fr" : "1fr", gap: isDesktop ? 16 : 12 }}>
+              {[...Array(4)].map((_, i) => (
+                <div key={i} style={{ background: "var(--surface)", borderRadius: 20, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 12, border: "1px solid var(--line)" }}>
+                  <div style={{ display: "flex", gap: 8 }}><Skeleton w={60} h={24} /><Skeleton w={100} h={24} /></div>
+                  <Skeleton h={44} radius={10} /><Skeleton h={44} radius={10} />
+                </div>
+              ))}
+            </div>
           ) : cardMatches.length === 0 ? (
             <p style={{ fontSize: 13, color: "var(--ink-3)" }}>Sem partidas nesta fase ainda.</p>
           ) : (

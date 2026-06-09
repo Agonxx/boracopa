@@ -10,35 +10,30 @@ interface Stats {
   palpites: number;
   cravadas: number;
   aproveitamento: string;
+  pts: number;
 }
 
 export default function PerfilPage() {
   const { user, logout } = useAuthStore();
   const router = useRouter();
   const supabase = createClient();
-  const [stats, setStats] = useState<Stats>({ palpites: 0, cravadas: 0, aproveitamento: "–" });
+  const [stats, setStats] = useState<Stats>({ palpites: 0, cravadas: 0, aproveitamento: "–", pts: 0 });
 
   useEffect(() => {
     if (!user) return;
     async function fetchStats() {
-      const { count: totalPalpites } = await supabase
-        .from("predictions")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", user!.id);
-
-      const { count: cravadas } = await supabase
-        .from("predictions")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", user!.id)
-        .eq("pts_earned", 5);
-
+      const [{ count: totalPalpites }, { data: memberData }] = await Promise.all([
+        supabase.from("predictions").select("id", { count: "exact", head: true }).eq("user_id", user!.id),
+        supabase.from("bolao_members").select("pts, cravadas").eq("user_id", user!.id),
+      ]);
       const total = totalPalpites ?? 0;
-      const crv = cravadas ?? 0;
-      const aprov = total > 0 ? `${Math.round((crv / total) * 100)}%` : "–";
-      setStats({ palpites: total, cravadas: crv, aproveitamento: aprov });
+      const totalPts = (memberData ?? []).reduce((s, m) => s + (m.pts ?? 0), 0);
+      const totalCrv = (memberData ?? []).reduce((s, m) => s + (m.cravadas ?? 0), 0);
+      const aprov = total > 0 ? `${Math.round((totalCrv / total) * 100)}%` : "–";
+      setStats({ palpites: total, cravadas: totalCrv, aproveitamento: aprov, pts: totalPts });
     }
     fetchStats();
-  }, [user]);
+  }, [user?.id]);
 
   async function handleLogout() {
     await logout();
@@ -49,7 +44,7 @@ export default function PerfilPage() {
 
   const initials = user.name.slice(0, 2).toUpperCase();
   const statItems = [
-    { v: user.pts > 0 ? `${user.pts}` : "0", k: "pontos" },
+    { v: `${stats.pts}`, k: "pontos" },
     { v: `${stats.palpites}`, k: "palpites" },
     { v: `${stats.cravadas}`, k: "placar cravado" },
     { v: stats.aproveitamento, k: "aproveitamento" },
@@ -69,7 +64,7 @@ export default function PerfilPage() {
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 6, background: "var(--primary-soft)", borderRadius: 30, padding: "7px 13px", flexShrink: 0 }}>
-          <span style={{ fontFamily: "Anton, sans-serif", fontSize: 19, color: "var(--primary-strong)", lineHeight: 1 }}>{user.pts}</span>
+          <span style={{ fontFamily: "Anton, sans-serif", fontSize: 19, color: "var(--primary-strong)", lineHeight: 1 }}>{stats.pts}</span>
           <span style={{ fontSize: 10.5, fontWeight: 800, color: "var(--primary-strong)", textTransform: "uppercase", letterSpacing: 0.5 }}>pts</span>
         </div>
       </div>

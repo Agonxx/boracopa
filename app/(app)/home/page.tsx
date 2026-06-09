@@ -6,6 +6,7 @@ import Hero from "@/components/home/Hero";
 import MatchCard from "@/components/match/MatchCard";
 import { useAuthStore } from "@/store/auth";
 import { createClient } from "@/lib/supabase/client";
+import Skeleton from "@/components/ui/Skeleton";
 import type { Match } from "@/lib/mock";
 
 function useIsDesktop() {
@@ -44,20 +45,23 @@ function formatMatchTime(dateStr: string): string {
 }
 
 function toCardMatch(m: DbMatch, pred?: Prediction): Match {
+  const finished = m.status === "finished";
   const started = new Date(m.match_date) <= new Date();
-  const locked = m.status === "closed" || m.status === "finished" || started;
+  const locked = m.status === "closed" || finished || started;
   return {
     id: m.id,
     grp: m.group_name ? `Rod. ${m.round}` : (PHASE_LABELS[m.phase] ?? m.phase),
     time: formatMatchTime(m.match_date),
     a: { n: m.team_a, c: m.code_a },
     b: { n: m.team_b, c: m.code_b },
-    score: [pred?.score_a ?? null, pred?.score_b ?? null] as [number | null, number | null],
+    score: (finished ? [m.result_a, m.result_b] : [pred?.score_a ?? null, pred?.score_b ?? null]) as [number | null, number | null],
     done: locked,
     upcoming: m.status === "upcoming",
     advance: pred?.advance_code ?? undefined,
     deadline: undefined,
     editUntil: undefined,
+    finished,
+    myPred: finished ? [pred?.score_a ?? null, pred?.score_b ?? null] as [number | null, number | null] : undefined,
   };
 }
 
@@ -169,6 +173,19 @@ export default function HomePage() {
         targetDate={heroTarget?.match_date ?? null}
         phaseLabel={phaseLabel}
       />
+
+      {loading && (
+        <div style={{ display: "grid", gridTemplateColumns: isDesktop ? "1fr 1fr" : "1fr", gap: isDesktop ? 16 : 12 }}>
+          {[...Array(4)].map((_, i) => (
+            <div key={i} style={{ background: "var(--surface)", borderRadius: 20, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 12, border: "1px solid var(--line)" }}>
+              <div style={{ display: "flex", gap: 8 }}><Skeleton w={60} h={24} /><Skeleton w={110} h={24} /></div>
+              <Skeleton h={44} radius={10} />
+              <Skeleton h={44} radius={10} />
+              <Skeleton h={16} radius={6} w="70%" />
+            </div>
+          ))}
+        </div>
+      )}
 
       {!loading && cardMatches.length > 0 && (
         <>
