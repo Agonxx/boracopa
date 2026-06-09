@@ -74,10 +74,69 @@ function LoginForm({ error, onSubmit }: { error: boolean; onSubmit: (u: string, 
   const [user, setUser] = useState("");
   const [pass, setPass] = useState("");
   const [show, setShow] = useState(false);
+  const [forgot, setForgot] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotStatus, setForgotStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     onSubmit(user, pass);
+  }
+
+  async function handleForgot(e: React.FormEvent) {
+    e.preventDefault();
+    if (!forgotEmail) return;
+    setForgotStatus("sending");
+    const { createClient } = await import("@/lib/supabase/client");
+    const supabase = createClient();
+    const origin = process.env.NEXT_PUBLIC_SITE_URL ?? window.location.origin;
+    const { error: err } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+      redirectTo: `${origin}/reset-password`,
+    });
+    setForgotStatus(err ? "error" : "sent");
+  }
+
+  if (forgot) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <div>
+          <p style={{ margin: "0 0 4px", fontWeight: 800, fontSize: 15, color: "var(--ink)" }}>Redefinir senha</p>
+          <p style={{ margin: 0, fontSize: 13, color: "var(--ink-2)" }}>Enviaremos um link para o seu e-mail.</p>
+        </div>
+
+        {forgotStatus === "sent" ? (
+          <div style={{ background: "var(--primary-soft)", borderRadius: 13, padding: "14px 16px", fontSize: 13.5, fontWeight: 600, color: "var(--primary-strong)", lineHeight: 1.5 }}>
+            Link enviado para <b>{forgotEmail}</b>. Verifique sua caixa de entrada.
+          </div>
+        ) : (
+          <form onSubmit={handleForgot} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <Field
+              label="E-mail"
+              iconPath="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"
+              type="email" value={forgotEmail} onChange={setForgotEmail}
+              placeholder="seu@email.com" autoFocus
+            />
+            {forgotStatus === "error" && (
+              <span style={{ fontSize: 12.5, fontWeight: 600, color: "var(--live)" }}>Erro ao enviar. Tente novamente.</span>
+            )}
+            <button type="submit" disabled={forgotStatus === "sending" || !forgotEmail} style={{
+              height: 52, border: "none", borderRadius: 13,
+              background: "var(--primary)", color: "var(--on-primary)",
+              fontFamily: "Archivo, sans-serif", fontWeight: 800, fontSize: 15,
+              cursor: "pointer", boxShadow: "0 4px 0 var(--primary-strong)",
+              opacity: (!forgotEmail || forgotStatus === "sending") ? 0.7 : 1,
+            }}>
+              {forgotStatus === "sending" ? "Enviando..." : "Enviar link →"}
+            </button>
+          </form>
+        )}
+
+        <button type="button" onClick={() => { setForgot(false); setForgotStatus("idle"); setForgotEmail(""); }}
+          style={{ background: "none", border: "none", cursor: "pointer", fontSize: 13, fontWeight: 700, color: "var(--ink-2)", padding: 0, textAlign: "center" }}>
+          ← Voltar ao login
+        </button>
+      </div>
+    );
   }
 
   return (
@@ -107,6 +166,10 @@ function LoginForm({ error, onSubmit }: { error: boolean; onSubmit: (u: string, 
             Usuário ou senha incorretos. Tente de novo.
           </span>
         )}
+        <button type="button" onClick={() => setForgot(true)}
+          style={{ background: "none", border: "none", cursor: "pointer", fontSize: 12.5, fontWeight: 700, color: "var(--ink-3)", padding: 0, textAlign: "right", alignSelf: "flex-end" }}>
+          Esqueci minha senha
+        </button>
       </div>
 
       <button type="submit" style={{
