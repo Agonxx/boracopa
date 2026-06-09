@@ -56,7 +56,7 @@ export default function Hero({
             }} />
             <span style={{ fontFamily: "Anton, sans-serif", fontSize: 13, letterSpacing: 1.5, color: "var(--hero-dim)" }}>
               {isOpen
-                ? `PRÓXIMO PRAZO${phaseLabel ? ` · ${phaseLabel}` : ""}`
+                ? `FALTAM PALPITAR · ${phaseLabel}`
                 : phaseLabel ? `EM BREVE · ${phaseLabel}` : "COPA DO MUNDO 2026"}
             </span>
           </div>
@@ -73,9 +73,9 @@ export default function Hero({
 
           <div style={{ fontSize: 13.5, color: "var(--hero-dim)", marginTop: 10, fontWeight: 500 }}>
             {isOpen
-              ? <>até o prazo fechar. Você tem{" "}<b style={{ color: "var(--hero-ink)" }}>{open} jogo{open !== 1 ? "s" : ""}</b> em aberto.</>
+              ? <>até o prazo fechar. Faltam{" "}<b style={{ color: "var(--hero-ink)" }}>{open} palpite{open !== 1 ? "s" : ""}</b> pra completar a rodada.</>
               : targetDate
-                ? "Acompanhe o prazo e palpite a tempo."
+                ? <>Você está em dia!{" "}<b style={{ color: "var(--hero-ink)" }}>Nenhum palpite pendente.</b></>
                 : "Os próximos jogos aparecerão aqui em breve."}
           </div>
         </div>

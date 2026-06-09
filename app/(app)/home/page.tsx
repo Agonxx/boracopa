@@ -127,10 +127,13 @@ export default function HomePage() {
   const cardMatches = matches.map((m) => toCardMatch(m, predMap[m.id]));
 
   // Hero data
+  const firstOpenNoPred = matches.find((m) => m.status === "open" && !predMap[m.id]);
   const firstOpen = matches.find((m) => m.status === "open");
   const firstAny = matches[0];
-  const heroTarget = firstOpen ?? firstAny;
-  const openCount = matches.filter((m) => m.status === "open").length;
+  const heroTarget = firstOpenNoPred ?? firstOpen ?? firstAny;
+  const openCount = matches.filter(
+    (m) => m.status === "open" && (!predMap[m.id] || predMap[m.id].score_a == null)
+  ).length;
   const phaseLabel = heroTarget
     ? heroTarget.group_name
       ? `GRUPO ${heroTarget.group_name}`
