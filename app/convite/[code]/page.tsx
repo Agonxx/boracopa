@@ -23,17 +23,21 @@ export default function ConvitePage() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [alreadyMember, setAlreadyMember] = useState(false);
   const [joining, setJoining] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     async function init() {
+      const autoJoin = new URLSearchParams(window.location.search).get("autojoin") === "1";
+
       const [{ data: { session } }, { data: bolaoData }] = await Promise.all([
         supabase.auth.getSession(),
         supabase.from("boloes").select("id, name, entry_fee").eq("invite_code", inviteCode).single(),
       ]);
 
-      setUserId(session?.user?.id ?? null);
+      const uid = session?.user?.id ?? null;
+      setUserId(uid);
 
       if (!bolaoData) {
         setNotFound(true);
@@ -47,6 +51,35 @@ export default function ConvitePage() {
         .eq("bolao_id", bolaoData.id);
 
       setBolao({ ...bolaoData, memberCount: count ?? 0 });
+
+      if (uid) {
+        // Verifica se já é membro
+        const { data: membership } = await supabase
+          .from("bolao_members")
+          .select("id")
+          .eq("bolao_id", bolaoData.id)
+          .eq("user_id", uid)
+          .maybeSingle();
+
+        if (membership) {
+          setAlreadyMember(true);
+          setLoading(false);
+          return;
+        }
+
+        // Auto-entra se veio do login/register via convite
+        if (autoJoin) {
+          const { error: err } = await supabase
+            .from("bolao_members")
+            .insert({ bolao_id: bolaoData.id, user_id: uid });
+
+          if (!err || err.code === "23505") {
+            router.replace(`/boloes/${bolaoData.id}`);
+            return;
+          }
+        }
+      }
+
       setLoading(false);
     }
     init();
@@ -70,6 +103,9 @@ export default function ConvitePage() {
     }
     router.push(`/boloes/${bolao.id}`);
   }
+
+  const loginHref = `/login?next=${encodeURIComponent(`/convite/${inviteCode}?autojoin=1`)}`;
+  const registerHref = `/register?next=${encodeURIComponent(`/convite/${inviteCode}?autojoin=1`)}`;
 
   return (
     <div style={{
@@ -110,45 +146,63 @@ export default function ConvitePage() {
               </div>
             </div>
 
-            <p style={{ margin: 0, fontSize: 14, color: "var(--ink-2)", textAlign: "center", lineHeight: 1.5 }}>
-              Você foi convidado para participar deste bolão da Copa 2026.
-            </p>
-
-            {error && (
-              <p style={{ margin: 0, fontSize: 12.5, color: "var(--live)", fontWeight: 600, textAlign: "center" }}>{error}</p>
-            )}
-
-            {userId ? (
-              <button onClick={handleJoin} disabled={joining} style={{
-                height: 52, borderRadius: 13, border: "none",
-                background: "var(--primary)", color: "var(--on-primary)",
-                fontFamily: "Archivo, sans-serif", fontWeight: 800, fontSize: 16,
-                cursor: joining ? "not-allowed" : "pointer",
-                boxShadow: "0 5px 0 var(--primary-strong)", opacity: joining ? 0.7 : 1,
-              }}>
-                {joining ? "Entrando..." : "Entrar no bolão →"}
-              </button>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                <Link href={`/register?next=/convite/${inviteCode}`} style={{
-                  display: "flex", alignItems: "center", justifyContent: "center",
+            {alreadyMember ? (
+              <>
+                <p style={{ margin: 0, fontSize: 14, color: "var(--ink-2)", textAlign: "center" }}>
+                  Você já faz parte deste bolão.
+                </p>
+                <button onClick={() => router.push(`/boloes/${bolao!.id}`)} style={{
                   height: 52, borderRadius: 13, border: "none",
                   background: "var(--primary)", color: "var(--on-primary)",
                   fontFamily: "Archivo, sans-serif", fontWeight: 800, fontSize: 16,
-                  textDecoration: "none", boxShadow: "0 5px 0 var(--primary-strong)",
+                  cursor: "pointer", boxShadow: "0 5px 0 var(--primary-strong)",
                 }}>
-                  Criar conta e entrar →
-                </Link>
-                <Link href={`/login?next=/convite/${inviteCode}`} style={{
-                  display: "flex", alignItems: "center", justifyContent: "center",
-                  height: 46, borderRadius: 13, border: "1.5px solid var(--line-strong)",
-                  background: "transparent", color: "var(--ink)",
-                  fontFamily: "Archivo, sans-serif", fontWeight: 700, fontSize: 15,
-                  textDecoration: "none",
-                }}>
-                  Já tenho conta
-                </Link>
-              </div>
+                  Ver bolão →
+                </button>
+              </>
+            ) : (
+              <>
+                <p style={{ margin: 0, fontSize: 14, color: "var(--ink-2)", textAlign: "center", lineHeight: 1.5 }}>
+                  Você foi convidado para participar deste bolão da Copa 2026.
+                </p>
+
+                {error && (
+                  <p style={{ margin: 0, fontSize: 12.5, color: "var(--live)", fontWeight: 600, textAlign: "center" }}>{error}</p>
+                )}
+
+                {userId ? (
+                  <button onClick={handleJoin} disabled={joining} style={{
+                    height: 52, borderRadius: 13, border: "none",
+                    background: "var(--primary)", color: "var(--on-primary)",
+                    fontFamily: "Archivo, sans-serif", fontWeight: 800, fontSize: 16,
+                    cursor: joining ? "not-allowed" : "pointer",
+                    boxShadow: "0 5px 0 var(--primary-strong)", opacity: joining ? 0.7 : 1,
+                  }}>
+                    {joining ? "Entrando..." : "Entrar no bolão →"}
+                  </button>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    <Link href={registerHref} style={{
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      height: 52, borderRadius: 13, border: "none",
+                      background: "var(--primary)", color: "var(--on-primary)",
+                      fontFamily: "Archivo, sans-serif", fontWeight: 800, fontSize: 16,
+                      textDecoration: "none", boxShadow: "0 5px 0 var(--primary-strong)",
+                    }}>
+                      Criar conta e entrar →
+                    </Link>
+                    <Link href={loginHref} style={{
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      height: 46, borderRadius: 13, border: "1.5px solid var(--line-strong)",
+                      background: "transparent", color: "var(--ink)",
+                      fontFamily: "Archivo, sans-serif", fontWeight: 700, fontSize: 15,
+                      textDecoration: "none",
+                    }}>
+                      Já tenho conta
+                    </Link>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}
