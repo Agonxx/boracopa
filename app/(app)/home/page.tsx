@@ -62,6 +62,7 @@ function toCardMatch(m: DbMatch, pred?: Prediction): Match {
     editUntil: undefined,
     finished,
     myPred: finished ? [pred?.score_a ?? null, pred?.score_b ?? null] as [number | null, number | null] : undefined,
+    matchDate: m.match_date,
   };
 }
 

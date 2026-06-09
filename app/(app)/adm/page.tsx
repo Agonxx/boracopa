@@ -52,6 +52,8 @@ export default function AdmPage() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [resetMsg, setResetMsg] = useState<Record<string, string>>({});
+  const [userSearch, setUserSearch] = useState("");
+  const [userSort, setUserSort] = useState<"name" | "recent">("recent");
 
   async function fetchUsers() {
     setUsersLoading(true);
@@ -393,9 +395,33 @@ export default function AdmPage() {
             </button>
           </div>
 
+          {/* Search + sort */}
+          <div style={{ display: "flex", gap: 8 }}>
+            <input
+              value={userSearch} onChange={e => setUserSearch(e.target.value)}
+              placeholder="Buscar por nome ou e-mail..."
+              style={{ ...fieldStyle, flex: 1, height: 38, fontSize: 13 }}
+            />
+            {(["recent", "name"] as const).map(s => (
+              <button key={s} onClick={() => setUserSort(s)} style={{ height: 38, padding: "0 12px", borderRadius: 9, border: "1.5px solid var(--line-strong)", background: userSort === s ? "var(--ink)" : "transparent", color: userSort === s ? "var(--surface)" : "var(--ink-2)", fontFamily: "Archivo, sans-serif", fontWeight: 700, fontSize: 12, cursor: "pointer", whiteSpace: "nowrap" }}>
+                {s === "recent" ? "Recentes" : "Nome A-Z"}
+              </button>
+            ))}
+          </div>
+
           {usersLoading && <p style={{ fontSize: 13, color: "var(--ink-3)" }}>Carregando...</p>}
 
-          {users.map((u) => (
+          {(() => {
+            const q = userSearch.toLowerCase();
+            const displayed = users
+              .filter(u => !q || (u.name ?? "").toLowerCase().includes(q) || u.email.toLowerCase().includes(q))
+              .sort((a, b) => userSort === "name"
+                ? (a.name ?? a.email).localeCompare(b.name ?? b.email)
+                : new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+              );
+            if (!usersLoading && displayed.length === 0)
+              return <p style={{ fontSize: 13, color: "var(--ink-3)" }}>{userSearch ? "Nenhum resultado." : "Nenhum usuário encontrado."}</p>;
+            return displayed.map((u) => (
             <div key={u.id} style={{ background: "var(--surface)", borderRadius: 14, border: "1px solid var(--line)", padding: "14px 16px", display: "flex", alignItems: "center", gap: 14 }}>
               {/* avatar */}
               <div style={{ width: 40, height: 40, borderRadius: "50%", flexShrink: 0, background: "var(--app-bg)", border: "1.5px solid var(--line-strong)", display: "grid", placeItems: "center", fontFamily: "Anton, sans-serif", fontSize: 15, color: "var(--ink-2)", letterSpacing: 0.3 }}>
@@ -426,11 +452,8 @@ export default function AdmPage() {
                 )}
               </div>
             </div>
-          ))}
-
-          {!usersLoading && users.length === 0 && (
-            <p style={{ fontSize: 13, color: "var(--ink-3)" }}>Nenhum usuário encontrado.</p>
-          )}
+          ));
+          })()}
         </div>
       )}
 

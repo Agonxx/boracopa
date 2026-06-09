@@ -7,6 +7,7 @@ export interface Match {
   a: Team; b: Team; score: [number | null, number | null];
   finished?: boolean;
   myPred?: [number | null, number | null];
+  matchDate?: string;
 }
 
 /* ── Home ── */
