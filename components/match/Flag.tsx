@@ -1,34 +1,73 @@
-const TLA_TO_ISO2: Record<string, string> = {
+const TLA_TO_FILE: Record<string, string> = {
   // América do Sul
-  BRA: "br", ARG: "ar", URU: "uy", COL: "co", ECU: "ec",
-  PAR: "py", BOL: "bo", CHL: "cl", PER: "pe", VEN: "ve",
+  BRA: "Brazil",
+  ARG: "Argentina",
+  URU: "Uruguay",
+  COL: "Colombia",
+  ECU: "Ecuador",
+  PAR: "Paraguay",
   // CONCACAF
-  USA: "us", MEX: "mx", CAN: "ca", CRC: "cr", PAN: "pa",
-  HON: "hn", SLV: "sv", JAM: "jm", HAI: "ht", TRI: "tt", CUW: "cw",
+  USA: "United States of America",
+  MEX: "Mexico",
+  CAN: "Canada",
+  PAN: "Panama",
+  HAI: "Haiti",
+  CUW: "Curaçao",
   // Europa
-  FRA: "fr", GER: "de", ESP: "es", POR: "pt", ENG: "gb-eng",
-  NED: "nl", BEL: "be", CRO: "hr", SUI: "ch", ITA: "it",
-  POL: "pl", UKR: "ua", SRB: "rs", SCO: "gb-sct", AUT: "at",
-  TUR: "tr", CZE: "cz", SVK: "sk", HUN: "hu", ROU: "ro",
-  GRE: "gr", ALB: "al", WAL: "gb-wls", BIH: "ba", DEN: "dk",
-  SWE: "se", NOR: "no", FIN: "fi", ISL: "is", SVN: "si",
-  KOS: "xk", GEO: "ge",
+  FRA: "France",
+  GER: "Germany",
+  ESP: "Spain",
+  POR: "Portugal",
+  ENG: "England",
+  NED: "Netherlands",
+  BEL: "Belgium",
+  CRO: "Croatia",
+  SUI: "Switzerland",
+  SCO: "Scotland",
+  AUT: "Austria",
+  TUR: "Türkiye or Turkey",
+  CZE: "Czech Republic or Czechia",
+  BIH: "Bosnia and Herzegovina",
+  SWE: "Sweden",
+  NOR: "Norway",
   // África
-  MAR: "ma", SEN: "sn", NGA: "ng", GHA: "gh", CIV: "ci",
-  CMR: "cm", RSA: "za", EGY: "eg", ALG: "dz", TUN: "tn",
-  MLI: "ml", COD: "cd", TAN: "tz", KEN: "ke", BEN: "bj",
-  GUI: "gn", COM: "km", ANG: "ao", ZAM: "zm", UGA: "ug", MOZ: "mz",
+  MAR: "Morocco",
+  SEN: "Senegal",
+  GHA: "Ghana",
+  CIV: "Côte d'Ivoire or Ivory Coast",
+  RSA: "South Africa",
+  EGY: "Egypt",
+  ALG: "Algeria",
+  TUN: "Tunisia",
+  COD: "Democratic Republic of the Congo or DR Congo",
   // Ásia / Oceania
-  JPN: "jp", KOR: "kr", KSA: "sa", IRN: "ir", AUS: "au",
-  QAT: "qa", UZB: "uz", CHN: "cn", IDN: "id", NZL: "nz",
-  IRQ: "iq", JOR: "jo", OMA: "om", BHR: "bh", UAE: "ae",
+  JPN: "Japan",
+  KOR: "South Korea",
+  KSA: "Saudi Arabia",
+  IRN: "Iran",
+  AUS: "Australia",
+  QAT: "Qatar",
+  UZB: "Uzbekistan",
+  NZL: "New Zealand",
+  IRQ: "Iraq",
+  JOR: "Jordan",
 };
 
-// Emojis especiais para nações do Reino Unido
+// Emoji fallback para seleções sem imagem
+const TLA_TO_ISO2: Record<string, string> = {
+  BOL: "bo", CHL: "cl", PER: "pe", VEN: "ve",
+  CRC: "cr", HON: "hn", SLV: "sv", JAM: "jm", TRI: "tt",
+  ITA: "it", POL: "pl", UKR: "ua", SRB: "rs", SVK: "sk",
+  HUN: "hu", ROU: "ro", GRE: "gr", ALB: "al", WAL: "gb-wls",
+  DEN: "dk", FIN: "fi", ISL: "is", SVN: "si", KOS: "xk", GEO: "ge",
+  NGA: "ng", CMR: "cm", MLI: "ml", TAN: "tz", KEN: "ke",
+  BEN: "bj", GUI: "gn", COM: "km", ANG: "ao", ZAM: "zm", UGA: "ug", MOZ: "mz",
+  CHN: "cn", IDN: "id", BHR: "bh", UAE: "ae", OMA: "om",
+};
+
 const SPECIAL_EMOJI: Record<string, string> = {
-  "gb-eng": "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
-  "gb-sct": "🏴󠁧󠁢󠁳󠁣󠁴󠁿",
   "gb-wls": "🏴󠁧󠁢󠁷󠁬󠁳󠁿",
+  "gb-sct": "🏴󠁧󠁢󠁳󠁣󠁴󠁿",
 };
 
 function toEmoji(iso2: string): string {
@@ -39,8 +78,26 @@ function toEmoji(iso2: string): string {
 }
 
 export default function Flag({ code, size = 34 }: { code: string; size?: number }) {
-  const iso2 = TLA_TO_ISO2[code?.toUpperCase()];
+  const upper = code?.toUpperCase();
+  const file = TLA_TO_FILE[upper];
 
+  if (file) {
+    return (
+      <div style={{
+        width: size, height: size, borderRadius: "50%",
+        overflow: "hidden", flexShrink: 0,
+        border: "1.5px solid var(--line-strong)",
+      }}>
+        <img
+          src={`/flags/${encodeURIComponent(file)}.jpg`}
+          alt={code}
+          style={{ width: "100%", height: "100%", objectFit: "cover", objectPosition: "center", display: "block" }}
+        />
+      </div>
+    );
+  }
+
+  const iso2 = TLA_TO_ISO2[upper];
   if (iso2) {
     return (
       <div style={{
