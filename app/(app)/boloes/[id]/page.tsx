@@ -80,6 +80,12 @@ export default function BolaoDetailPage() {
     router.replace("/boloes");
   }
 
+  async function handleDelete() {
+    if (!confirm(`Excluir o bolão "${bolao?.name}"? Todos os membros serão removidos. Esta ação não pode ser desfeita.`)) return;
+    await supabase.from("bolaos").delete().eq("id", id);
+    router.replace("/boloes");
+  }
+
   if (loading) return <div className="p-4 lg:p-8" style={{ color: "var(--ink-3)", fontSize: 14, fontWeight: 600 }}>Carregando...</div>;
   if (!bolao) return <div className="p-4 lg:p-8" style={{ color: "var(--live)", fontSize: 14, fontWeight: 600 }}>Bolão não encontrado.</div>;
 
@@ -195,10 +201,15 @@ export default function BolaoDetailPage() {
         })}
       </div>
 
-      {/* sair */}
+      {/* sair / excluir */}
       {!isOwner && (
         <button onClick={handleSair} style={{ marginTop: 8, height: 44, borderRadius: 12, border: "1.5px solid var(--line-strong)", background: "var(--surface)", fontFamily: "Archivo, sans-serif", fontWeight: 700, fontSize: 13.5, color: "var(--ink-3)", cursor: "pointer" }}>
           Sair do bolão
+        </button>
+      )}
+      {isOwner && (
+        <button onClick={handleDelete} style={{ marginTop: 8, height: 44, borderRadius: 12, border: "1.5px solid #e74c3c", background: "transparent", fontFamily: "Archivo, sans-serif", fontWeight: 700, fontSize: 13.5, color: "#e74c3c", cursor: "pointer" }}>
+          Excluir bolão
         </button>
       )}
     </div>
