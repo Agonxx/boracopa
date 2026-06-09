@@ -72,7 +72,8 @@ function computeDeadline(dateStr: string, status: string): { label: string; urge
 
 function toCardMatch(m: DbMatch, pred?: Prediction) {
   const finished = m.status === "finished";
-  const locked = m.status === "closed" || finished;
+  const started = new Date(m.match_date) <= new Date();
+  const locked = m.status === "closed" || finished || started;
   return {
     id: m.id,
     grp: m.group_name ? `Rod. ${m.round}` : (PHASE_LABELS[m.phase] ?? m.phase),
@@ -123,6 +124,8 @@ export default function PalpitesPage() {
 
   async function savePrediction(matchId: string, scoreA: number, scoreB: number) {
     if (!user) return;
+    const match = matches.find((m) => m.id === matchId);
+    if (!match || new Date(match.match_date) <= new Date()) return;
     await supabase.from("predictions").upsert(
       { user_id: user.id, match_id: matchId, score_a: scoreA, score_b: scoreB },
       { onConflict: "user_id,match_id" }
