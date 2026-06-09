@@ -227,7 +227,8 @@ export default function LoginPage() {
     const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (signInError) { setError(true); return; }
-    window.location.href = "/home";
+    const next = new URLSearchParams(window.location.search).get("next");
+    window.location.href = next ?? "/home";
   }
 
   return (

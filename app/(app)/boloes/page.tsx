@@ -251,7 +251,7 @@ export default function BoloesPag() {
                   )}
                   <span style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 11.5, fontWeight: 700, color: "var(--ink-3)", fontFamily: "Anton, sans-serif", letterSpacing: 1, marginLeft: "auto" }}>
                     {b.invite_code}
-                    <CopyButton text={b.invite_code} />
+                    <CopyButton text={`${typeof window !== "undefined" ? window.location.origin : ""}/convite/${b.invite_code}`} />
                   </span>
                 </div>
               </div>

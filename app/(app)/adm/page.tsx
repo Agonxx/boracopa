@@ -116,6 +116,11 @@ export default function AdmPage() {
   const [resB, setResB] = useState("");
   const [publishing, setPublishing] = useState(false);
 
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editA, setEditA] = useState("");
+  const [editB, setEditB] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
+
   useEffect(() => {
     if (_hydrated && (!user || !user.isSuperAdmin)) router.replace("/home");
   }, [user, _hydrated]);
@@ -185,6 +190,21 @@ export default function AdmPage() {
     setResMatch(""); setResA(""); setResB("");
     fetchMatches();
     setSavedMsg("Resultado publicado! Pontos distribuídos.");
+    setTimeout(() => setSavedMsg(""), 4000);
+  }
+
+  async function handleEditResult() {
+    if (!editingId || editA === "" || editB === "") return;
+    setEditSaving(true);
+    await supabase.from("matches").update({
+      result_a: parseInt(editA),
+      result_b: parseInt(editB),
+    }).eq("id", editingId);
+    await supabase.rpc("recalculate_all_points");
+    setEditSaving(false);
+    setEditingId(null);
+    fetchMatches();
+    setSavedMsg("Resultado corrigido! Pontos recalculados.");
     setTimeout(() => setSavedMsg(""), 4000);
   }
 
@@ -319,11 +339,40 @@ export default function AdmPage() {
             </div>
             {matches.filter(m => m.status === "finished").map(m => (
               <div key={m.id} style={{ background: "var(--surface)", borderRadius: 14, border: "1px solid var(--line)", padding: "12px 14px", display: "flex", alignItems: "center", gap: 12 }}>
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontWeight: 700, fontSize: 14, color: "var(--ink)", margin: "0 0 2px" }}>{m.team_a} {m.result_a} × {m.result_b} {m.team_b}</p>
-                  <p style={{ fontSize: 12, color: "var(--ink-3)", margin: 0 }}>{new Date(m.match_date).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}</p>
-                </div>
-                <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--ink-2)", background: "var(--app-bg)", borderRadius: 8, padding: "3px 8px" }}>Finalizado</span>
+                {editingId === m.id ? (
+                  <>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontWeight: 700, fontSize: 13, color: "var(--ink)", margin: "0 0 8px" }}>{m.team_a} × {m.team_b}</p>
+                      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                        <input type="number" min={0} max={20} value={editA} onChange={e => setEditA(e.target.value)}
+                          style={{ ...fieldStyle, width: 56, height: 36, textAlign: "center", padding: "0 6px" }} />
+                        <span style={{ fontWeight: 800, color: "var(--ink-3)" }}>×</span>
+                        <input type="number" min={0} max={20} value={editB} onChange={e => setEditB(e.target.value)}
+                          style={{ ...fieldStyle, width: 56, height: 36, textAlign: "center", padding: "0 6px" }} />
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+                      <button onClick={() => setEditingId(null)} style={{ height: 34, padding: "0 12px", borderRadius: 9, border: "1.5px solid var(--line-strong)", background: "transparent", fontFamily: "Archivo, sans-serif", fontWeight: 700, fontSize: 12.5, color: "var(--ink-2)", cursor: "pointer" }}>
+                        Cancelar
+                      </button>
+                      <button onClick={handleEditResult} disabled={editSaving || editA === "" || editB === ""}
+                        style={{ height: 34, padding: "0 12px", borderRadius: 9, border: "none", background: "var(--primary)", color: "var(--on-primary)", fontFamily: "Archivo, sans-serif", fontWeight: 700, fontSize: 12.5, cursor: "pointer", opacity: (editSaving || editA === "" || editB === "") ? 0.6 : 1 }}>
+                        {editSaving ? "Salvando..." : "Salvar"}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ flex: 1 }}>
+                      <p style={{ fontWeight: 700, fontSize: 14, color: "var(--ink)", margin: "0 0 2px" }}>{m.team_a} {m.result_a} × {m.result_b} {m.team_b}</p>
+                      <p style={{ fontSize: 12, color: "var(--ink-3)", margin: 0 }}>{new Date(m.match_date).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}</p>
+                    </div>
+                    <button onClick={() => { setEditingId(m.id); setEditA(String(m.result_a ?? "")); setEditB(String(m.result_b ?? "")); }}
+                      style={{ height: 32, padding: "0 12px", borderRadius: 8, border: "1.5px solid var(--line-strong)", background: "transparent", fontFamily: "Archivo, sans-serif", fontWeight: 700, fontSize: 12, color: "var(--ink-2)", cursor: "pointer", flexShrink: 0 }}>
+                      Editar
+                    </button>
+                  </>
+                )}
               </div>
             ))}
             {matches.filter(m => m.status === "finished").length === 0 && (

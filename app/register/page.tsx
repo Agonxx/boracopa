@@ -68,7 +68,8 @@ export default function RegisterPage() {
       return;
     }
 
-    window.location.href = "/home";
+    const next = new URLSearchParams(window.location.search).get("next");
+    window.location.href = next ?? "/home";
   }
 
   return (
