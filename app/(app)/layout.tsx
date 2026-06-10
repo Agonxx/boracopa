@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAuthStore } from "@/store/auth";
 import { useBolaoStore } from "@/store/bolao";
 import { createClient } from "@/lib/supabase/client";
@@ -27,7 +28,7 @@ function MobileHeader({ onOpenProfile }: { onOpenProfile: () => void }) {
       } as React.CSSProperties}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-        <Wordmark />
+        <Link href="/home" style={{ textDecoration: "none" }}><Wordmark /></Link>
         <div style={{ marginLeft: "auto" }}>
           <PointsPill
             pts={user.pts}

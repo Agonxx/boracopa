@@ -13,6 +13,7 @@ const navItems = [
   { href: "/boloes",   label: "Bolões"   },
   { href: "/palpites", label: "Palpites" },
   { href: "/ranking",  label: "Ranking"  },
+  { href: "/regras",   label: "Regras"   },
 ];
 
 export default function Header({
@@ -40,7 +41,7 @@ export default function Header({
       }}>
         {/* wordmark + bolão switcher */}
         <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
-          <Wordmark />
+          <Link href="/home" style={{ textDecoration: "none" }}><Wordmark /></Link>
           <BolaoSwitcher compact />
         </div>
 
