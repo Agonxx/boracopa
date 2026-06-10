@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Copy, Check, Users, Crown, ChevronLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuthStore } from "@/store/auth";
+import { useBolaoStore } from "@/store/bolao";
 
 interface Bolao {
   id: string; name: string; owner_id: string; invite_code: string;
@@ -29,6 +30,7 @@ function CopyButton({ text, label }: { text: string; label?: string }) {
 export default function BolaoDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuthStore();
+  const { activeBolaoId, clearActiveBolao } = useBolaoStore();
   const router = useRouter();
   const supabase = createClient();
 
@@ -77,12 +79,14 @@ export default function BolaoDetailPage() {
     if (!user) return;
     if (!confirm("Tem certeza que quer sair deste bolão?")) return;
     await supabase.from("bolao_members").delete().eq("bolao_id", id).eq("user_id", user.id);
+    if (activeBolaoId === id) clearActiveBolao();
     router.replace("/boloes");
   }
 
   async function handleDelete() {
     if (!confirm(`Excluir o bolão "${bolao?.name}"? Todos os membros serão removidos. Esta ação não pode ser desfeita.`)) return;
     await supabase.from("boloes").delete().eq("id", id);
+    if (activeBolaoId === id) clearActiveBolao();
     router.replace("/boloes");
   }
 

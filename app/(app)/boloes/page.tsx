@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Plus, Hash, Users, ChevronRight, Trophy, Copy, Check } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuthStore } from "@/store/auth";
+import { useBolaoStore } from "@/store/bolao";
 
 interface Bolao {
   id: string;
@@ -35,6 +36,7 @@ function CopyButton({ text }: { text: string }) {
 
 export default function BoloesPag() {
   const { user } = useAuthStore();
+  const { activeBolaoId, setUserBoloes, clearActiveBolao } = useBolaoStore();
   const router = useRouter();
   const supabase = createClient();
 
@@ -78,6 +80,10 @@ export default function BoloesPag() {
     }));
 
     setBoloes(withCount);
+    setUserBoloes(withCount.map(b => ({ id: b.id, name: b.name })));
+    if (activeBolaoId && !withCount.find(b => b.id === activeBolaoId)) {
+      clearActiveBolao();
+    }
     setLoading(false);
   }, [user]);
 
