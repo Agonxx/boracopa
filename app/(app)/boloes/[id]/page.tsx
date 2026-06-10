@@ -82,7 +82,7 @@ export default function BolaoDetailPage() {
 
   async function handleDelete() {
     if (!confirm(`Excluir o bolão "${bolao?.name}"? Todos os membros serão removidos. Esta ação não pode ser desfeita.`)) return;
-    await supabase.from("bolaos").delete().eq("id", id);
+    await supabase.from("boloes").delete().eq("id", id);
     router.replace("/boloes");
   }
 
