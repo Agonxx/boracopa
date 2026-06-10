@@ -25,14 +25,16 @@ export async function proxy(request: NextRequest) {
   const { data: { session } } = await supabase.auth.getSession();
   const { pathname } = request.nextUrl;
 
-  const isAuthPage = pathname === "/login" || pathname === "/register"
-    || pathname === "/reset-password" || pathname.startsWith("/convite/");
+  // páginas públicas: acessíveis com ou sem login
+  const isPublicPage = pathname === "/reset-password" || pathname.startsWith("/convite/");
+  // páginas de auth: redireciona usuário logado pra home
+  const isAuthOnlyPage = pathname === "/login" || pathname === "/register";
 
-  if (!session && !isAuthPage) {
+  if (!session && !isPublicPage && !isAuthOnlyPage) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  if (session && isAuthPage) {
+  if (session && isAuthOnlyPage) {
     return NextResponse.redirect(new URL("/home", request.url));
   }
 
