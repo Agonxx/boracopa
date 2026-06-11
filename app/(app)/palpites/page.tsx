@@ -143,14 +143,14 @@ export default function PalpitesPage() {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   useEffect(() => {
-    if (!isDate || loading) return;
+    if (phase !== "pordata" || loading) return;
     const today = new Date();
     const key = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
     setTimeout(() => {
       const el = document.querySelector(`[data-date="${key}"]`);
       if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 100);
-  }, [isDate, loading]);
+  }, [phase, loading]);
 
   async function savePrediction(matchId: string, scoreA: number, scoreB: number) {
     if (!user) return;
