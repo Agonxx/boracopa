@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Trophy, ChevronRight, X, Shield } from "lucide-react";
+import { Trophy, ChevronRight, X, Shield, Pencil, Check } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
 import { createClient } from "@/lib/supabase/client";
 
@@ -24,6 +24,9 @@ function Body({ onClose }: { onClose: () => void }) {
   const router = useRouter();
   const supabase = createClient();
   const [stats, setStats] = useState<Stats>({ palpites: 0, cravadas: 0 });
+  const [editingName, setEditingName] = useState(false);
+  const [nameValue, setNameValue] = useState(user?.name ?? "");
+  const [savingName, setSavingName] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -51,6 +54,16 @@ function Body({ onClose }: { onClose: () => void }) {
     { v: aprov, k: "aproveit." },
   ];
 
+  async function handleSaveName() {
+    const trimmed = nameValue.trim();
+    if (!trimmed || trimmed === user!.name) { setEditingName(false); return; }
+    setSavingName(true);
+    await supabase.from("profiles").update({ name: trimmed }).eq("id", user!.id);
+    useAuthStore.setState(s => ({ user: s.user ? { ...s.user, name: trimmed } : null }));
+    setSavingName(false);
+    setEditingName(false);
+  }
+
   async function handleLogout() {
     onClose();
     await logout();
@@ -67,7 +80,26 @@ function Body({ onClose }: { onClose: () => void }) {
           {initials}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 17, fontWeight: 800, letterSpacing: -0.2, color: "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.name}</div>
+          {editingName ? (
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <input
+                autoFocus
+                value={nameValue}
+                onChange={e => setNameValue(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") handleSaveName(); if (e.key === "Escape") setEditingName(false); }}
+                maxLength={40}
+                style={{ flex: 1, height: 32, padding: "0 10px", borderRadius: 8, border: "1.5px solid var(--primary-strong)", background: "var(--surface)", fontFamily: "Archivo, sans-serif", fontWeight: 800, fontSize: 15, color: "var(--ink)", outline: "none", minWidth: 0 }}
+              />
+              <button onClick={handleSaveName} disabled={savingName} style={{ width: 30, height: 30, borderRadius: 8, border: "none", background: "var(--primary)", color: "var(--on-primary)", cursor: "pointer", display: "grid", placeItems: "center", flexShrink: 0 }}>
+                <Check size={14} strokeWidth={2.6} />
+              </button>
+            </div>
+          ) : (
+            <div style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer" }} onClick={() => { setNameValue(user.name); setEditingName(true); }}>
+              <div style={{ fontSize: 17, fontWeight: 800, letterSpacing: -0.2, color: "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.name}</div>
+              <Pencil size={13} strokeWidth={2} style={{ color: "var(--ink-3)", flexShrink: 0 }} />
+            </div>
+          )}
           <div style={{ fontSize: 12, color: "var(--ink-2)", fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.email}</div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 5, background: "var(--primary-soft)", borderRadius: 30, padding: "6px 12px", flexShrink: 0 }}>
