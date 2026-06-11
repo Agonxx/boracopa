@@ -143,7 +143,7 @@ export default function MatchCard({ m, compact, knockout, onSave }: { m: Match; 
         .from("predictions")
         .select("score_a, score_b, points, profiles(name)")
         .eq("match_id", String(m.id));
-      setPreds((data ?? []) as PredRow[]);
+      setPreds((data ?? []) as unknown as PredRow[]);
       setPredsLoading(false);
     }
     setShowPreds(v => !v);
