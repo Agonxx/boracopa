@@ -31,6 +31,7 @@ const KO_ROUNDS = [
 const PHASE_TABS_ALL = [
   { key: "grupos", label: "Fase de grupos" },
   { key: "matamata", label: "Mata-mata" },
+  { key: "pordata", label: "Por data" },
 ];
 const KO_DB_PHASE: Record<string, string> = {
   oitavas: "r16", quartas: "quarter", semi: "semi", final: "final",
@@ -47,6 +48,20 @@ interface DbMatch {
 
 interface Prediction {
   match_id: string; score_a: number; score_b: number; advance_code?: string | null;
+}
+
+function buildDateGroups(allMatches: DbMatch[], predMap: Record<string, Prediction>) {
+  const groups: Map<string, { label: string; items: DbMatch[] }> = new Map();
+  for (const m of [...allMatches].sort((a, b) => a.match_date.localeCompare(b.match_date))) {
+    const d = new Date(m.match_date);
+    const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    if (!groups.has(key)) {
+      const raw = d.toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "long" });
+      groups.set(key, { label: raw.charAt(0).toUpperCase() + raw.slice(1), items: [] });
+    }
+    groups.get(key)!.items.push(m);
+  }
+  return [...groups.values()];
 }
 
 function formatMatchTime(dateStr: string): string {
@@ -105,7 +120,7 @@ export default function PalpitesPage() {
   const supabase = createClient();
 
   const [phase, setPhase] = useState("grupos");
-  const phaseTabs = user?.isSuperAdmin ? PHASE_TABS_ALL : PHASE_TABS_ALL.slice(0, 1);
+  const phaseTabs = user?.isSuperAdmin ? PHASE_TABS_ALL : [PHASE_TABS_ALL[0], PHASE_TABS_ALL[2]];
   const [group, setGroup] = useState("A");
   const [round, setRound] = useState("oitavas");
   const [matches, setMatches] = useState<DbMatch[]>([]);
@@ -144,14 +159,18 @@ export default function PalpitesPage() {
   if (!user) return null;
 
   const isKO = phase === "matamata";
+  const isDate = phase === "pordata";
   const predMap = Object.fromEntries(predictions.map(p => [p.match_id, p]));
 
-  const visibleMatches = isKO
-    ? matches.filter(m => m.phase === KO_DB_PHASE[round])
-    : matches.filter(m => m.phase === "groups" && m.group_name === group);
+  const visibleMatches = isDate
+    ? []
+    : isKO
+      ? matches.filter(m => m.phase === KO_DB_PHASE[round])
+      : matches.filter(m => m.phase === "groups" && m.group_name === group);
 
   const cardMatches = visibleMatches.map(m => toCardMatch(m, predMap[m.id]));
   const open = cardMatches.filter(m => !m.done && !m.upcoming).length;
+  const dateGroups = isDate ? buildDateGroups(matches, predMap) : [];
 
   return (
     <div style={{
@@ -164,13 +183,46 @@ export default function PalpitesPage() {
           {isDesktop ? "PALPITES" : "Palpites"}
         </h2>
         <span style={{ ...chip, marginLeft: "auto" }}>
-          {isKO ? "MATA-MATA" : "FASE DE GRUPOS"}
+          {isDate ? "72 JOGOS" : isKO ? "MATA-MATA" : "FASE DE GRUPOS"}
         </span>
       </div>
 
       <div><Segmented items={phaseTabs} value={phase} onChange={setPhase} /></div>
 
-      {!isKO ? (
+      {isDate ? (
+        <>
+          {loading ? (
+            <div style={{ display: "grid", gridTemplateColumns: isDesktop ? "1fr 1fr" : "1fr", gap: isDesktop ? 16 : 12 }}>
+              {[...Array(6)].map((_, i) => (
+                <div key={i} style={{ background: "var(--surface)", borderRadius: 20, padding: "14px 16px", display: "flex", flexDirection: "column", gap: 12, border: "1px solid var(--line)" }}>
+                  <div style={{ display: "flex", gap: 8 }}><Skeleton w={60} h={24} /><Skeleton w={100} h={24} /></div>
+                  <Skeleton h={44} radius={10} /><Skeleton h={44} radius={10} />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
+              {dateGroups.map(({ label, items }) => (
+                <div key={label} style={{ display: "flex", flexDirection: "column", gap: isDesktop ? 14 : 10 }}>
+                  <div style={{ fontFamily: "Anton, sans-serif", fontSize: 13, letterSpacing: 0.8, color: "var(--ink-3)", textTransform: "uppercase", paddingBottom: 6, borderBottom: "1px solid var(--line)" }}>
+                    {label} · {items.length} jogo{items.length !== 1 ? "s" : ""}
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: isDesktop ? "1fr 1fr" : "1fr", gap: isDesktop ? 16 : 12, alignItems: "start" }}>
+                    {items.map(m => {
+                      const cm = toCardMatch(m, predMap[m.id]);
+                      return (
+                        <MatchCard key={cm.id} m={cm} compact={!isDesktop}
+                          onSave={(a, b) => savePrediction(m.id, a, b)} />
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          <ScoringNote />
+        </>
+      ) : !isKO ? (
         <>
           {!isDesktop && (
             <div style={{ fontSize: 12.5, color: "var(--ink-2)", fontWeight: 500, marginTop: -6 }}>

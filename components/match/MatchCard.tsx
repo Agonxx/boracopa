@@ -2,7 +2,13 @@
 
 import { useState } from "react";
 import Flag from "./Flag";
+import { createClient } from "@/lib/supabase/client";
 import type { Match } from "@/lib/mock";
+
+interface PredRow {
+  score_a: number; score_b: number; points: number | null;
+  profiles: { name: string } | null;
+}
 
 const chevBtn: React.CSSProperties = { border: "none", background: "transparent", cursor: "pointer", padding: 2, display: "grid", placeItems: "center" };
 const stepBtn: React.CSSProperties = { width: 36, height: 44, border: "none", background: "transparent", cursor: "pointer", display: "grid", placeItems: "center" };
@@ -114,6 +120,10 @@ export default function MatchCard({ m, compact, knockout, onSave }: { m: Match; 
     m.done || (m.score[0] != null && m.score[1] != null)
   );
   const [saving, setSaving] = useState(false);
+  const supabase = createClient();
+  const [showPreds, setShowPreds] = useState(false);
+  const [preds, setPreds] = useState<PredRow[]>([]);
+  const [predsLoading, setPredsLoading] = useState(false);
 
   function handleA(v: number) { setA(v); setConfirmed(false); }
   function handleB(v: number) { setB(v); setConfirmed(false); }
@@ -124,6 +134,19 @@ export default function MatchCard({ m, compact, knockout, onSave }: { m: Match; 
     await onSave(a, b);
     setSaving(false);
     setConfirmed(true);
+  }
+
+  async function togglePreds() {
+    if (!showPreds && preds.length === 0) {
+      setPredsLoading(true);
+      const { data } = await supabase
+        .from("predictions")
+        .select("score_a, score_b, points, profiles(name)")
+        .eq("match_id", String(m.id));
+      setPreds((data ?? []) as PredRow[]);
+      setPredsLoading(false);
+    }
+    setShowPreds(v => !v);
   }
   const filled = a != null && b != null;
   const tie = filled && a === b;
@@ -258,6 +281,50 @@ export default function MatchCard({ m, compact, knockout, onSave }: { m: Match; 
             </>
           )}
         </div>
+
+        {locked && (
+          <>
+            <button onClick={togglePreds} style={{
+              background: "none", border: "none", cursor: "pointer", padding: 0,
+              fontSize: 12, fontWeight: 700, color: "var(--primary-strong)",
+              fontFamily: "Archivo, sans-serif", alignSelf: "flex-start",
+            }}>
+              {showPreds ? "▲ Ocultar palpites" : `▼ Ver palpites${preds.length > 0 ? ` (${preds.length})` : ""}`}
+            </button>
+
+            {predsLoading && <p style={{ fontSize: 12, color: "var(--ink-3)", margin: 0 }}>Carregando...</p>}
+
+            {showPreds && !predsLoading && (
+              <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                {preds.length === 0 ? (
+                  <p style={{ fontSize: 12, color: "var(--ink-3)", margin: 0 }}>Nenhum palpite registrado.</p>
+                ) : preds.map((p, i) => {
+                  const name = p.profiles?.name ?? "Usuário";
+                  let badge = null;
+                  if (m.finished && m.score[0] != null && m.score[1] != null) {
+                    const tipo = calcResultType([p.score_a, p.score_b], [m.score[0]!, m.score[1]!]);
+                    const st = RESULT_STYLE[tipo];
+                    badge = (
+                      <span style={{ fontSize: 11, fontWeight: 800, background: st.bg, color: st.color, borderRadius: 20, padding: "2px 8px", whiteSpace: "nowrap", flexShrink: 0 }}>
+                        {st.label} {st.pts}
+                      </span>
+                    );
+                  }
+                  return (
+                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 10px", borderRadius: 10, background: "var(--app-bg)", border: "1px solid var(--line)" }}>
+                      <div style={{ width: 26, height: 26, borderRadius: "50%", flexShrink: 0, background: "var(--primary-soft)", display: "grid", placeItems: "center", fontFamily: "Anton, sans-serif", fontSize: 10, color: "var(--primary-strong)" }}>
+                        {name.slice(0, 2).toUpperCase()}
+                      </div>
+                      <span style={{ flex: 1, fontSize: 12.5, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "var(--ink-2)", fontVariantNumeric: "tabular-nums" }}>{p.score_a} × {p.score_b}</span>
+                      {badge}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );
