@@ -3,10 +3,11 @@
 import { useState } from "react";
 import Flag from "./Flag";
 import { createClient } from "@/lib/supabase/client";
+import { X } from "lucide-react";
 import type { Match } from "@/lib/mock";
 
 interface PredRow {
-  score_a: number; score_b: number; points: number | null;
+  score_a: number; score_b: number;
   profiles: { name: string } | null;
 }
 
@@ -136,17 +137,16 @@ export default function MatchCard({ m, compact, knockout, onSave }: { m: Match; 
     setConfirmed(true);
   }
 
-  async function togglePreds() {
-    if (!showPreds && preds.length === 0) {
-      setPredsLoading(true);
-      const { data } = await supabase
-        .from("predictions")
-        .select("score_a, score_b, points, profiles(name)")
-        .eq("match_id", String(m.id));
-      setPreds((data ?? []) as unknown as PredRow[]);
-      setPredsLoading(false);
-    }
-    setShowPreds(v => !v);
+  async function openPreds() {
+    setShowPreds(true);
+    if (preds.length > 0) return;
+    setPredsLoading(true);
+    const { data } = await supabase
+      .from("predictions")
+      .select("score_a, score_b, profiles(name)")
+      .eq("match_id", String(m.id));
+    setPreds((data ?? []) as unknown as PredRow[]);
+    setPredsLoading(false);
   }
   const filled = a != null && b != null;
   const tie = filled && a === b;
@@ -178,6 +178,7 @@ export default function MatchCard({ m, compact, knockout, onSave }: { m: Match; 
   }
 
   return (
+  <>
     <div style={{
       background: "var(--surface)", borderRadius: 20, padding: "14px 16px 16px",
       border: tie && knockout && !locked ? "1.5px solid var(--primary-strong)" : "1px solid var(--line)",
@@ -283,49 +284,77 @@ export default function MatchCard({ m, compact, knockout, onSave }: { m: Match; 
         </div>
 
         {locked && (
-          <>
-            <button onClick={togglePreds} style={{
-              background: "none", border: "none", cursor: "pointer", padding: 0,
-              fontSize: 12, fontWeight: 700, color: "var(--primary-strong)",
-              fontFamily: "Archivo, sans-serif", alignSelf: "flex-start",
-            }}>
-              {showPreds ? "▲ Ocultar palpites" : `▼ Ver palpites${preds.length > 0 ? ` (${preds.length})` : ""}`}
-            </button>
-
-            {predsLoading && <p style={{ fontSize: 12, color: "var(--ink-3)", margin: 0 }}>Carregando...</p>}
-
-            {showPreds && !predsLoading && (
-              <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-                {preds.length === 0 ? (
-                  <p style={{ fontSize: 12, color: "var(--ink-3)", margin: 0 }}>Nenhum palpite registrado.</p>
-                ) : preds.map((p, i) => {
-                  const name = p.profiles?.name ?? "Usuário";
-                  let badge = null;
-                  if (m.finished && m.score[0] != null && m.score[1] != null) {
-                    const tipo = calcResultType([p.score_a, p.score_b], [m.score[0]!, m.score[1]!]);
-                    const st = RESULT_STYLE[tipo];
-                    badge = (
-                      <span style={{ fontSize: 11, fontWeight: 800, background: st.bg, color: st.color, borderRadius: 20, padding: "2px 8px", whiteSpace: "nowrap", flexShrink: 0 }}>
-                        {st.label} {st.pts}
-                      </span>
-                    );
-                  }
-                  return (
-                    <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 10px", borderRadius: 10, background: "var(--app-bg)", border: "1px solid var(--line)" }}>
-                      <div style={{ width: 26, height: 26, borderRadius: "50%", flexShrink: 0, background: "var(--primary-soft)", display: "grid", placeItems: "center", fontFamily: "Anton, sans-serif", fontSize: 10, color: "var(--primary-strong)" }}>
-                        {name.slice(0, 2).toUpperCase()}
-                      </div>
-                      <span style={{ flex: 1, fontSize: 12.5, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</span>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: "var(--ink-2)", fontVariantNumeric: "tabular-nums" }}>{p.score_a} × {p.score_b}</span>
-                      {badge}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </>
+          <button onClick={openPreds} style={{
+            background: "none", border: "none", cursor: "pointer", padding: 0,
+            fontSize: 12, fontWeight: 700, color: "var(--primary-strong)",
+            fontFamily: "Archivo, sans-serif", alignSelf: "flex-start",
+          }}>
+            ▼ Ver palpites
+          </button>
         )}
       </div>
     </div>
+
+    {showPreds && (
+      <div style={{ position: "fixed", inset: 0, zIndex: 60, display: "grid", placeItems: "center", padding: 16 }}>
+        <div onClick={() => setShowPreds(false)} style={{ position: "absolute", inset: 0, background: "rgba(20,18,14,.55)" }} />
+        <div style={{ position: "relative", width: "100%", maxWidth: 440, background: "var(--app-bg)", borderRadius: 22, overflow: "hidden", boxShadow: "0 30px 80px -20px rgba(0,0,0,.5)", maxHeight: "80vh", display: "flex", flexDirection: "column" }}>
+          {/* cabeçalho do modal */}
+          <div style={{ padding: "16px 18px 12px", borderBottom: "1px solid var(--line)", flexShrink: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+              <span style={chip}>{m.grp}</span>
+              <span style={{ fontSize: 12.5, color: "var(--ink-2)", fontWeight: 600 }}>{m.time}</span>
+              <button onClick={() => setShowPreds(false)} style={{ marginLeft: "auto", width: 30, height: 30, borderRadius: "50%", border: "1px solid var(--line-strong)", background: "var(--surface)", cursor: "pointer", display: "grid", placeItems: "center" }}>
+                <X size={14} strokeWidth={2.2} style={{ color: "var(--ink-2)" }} />
+              </button>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 7, flex: 1, minWidth: 0 }}>
+                <Flag code={m.a.c} size={22} />
+                <span style={{ fontWeight: 700, fontSize: 14.5, color: "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.a.n}</span>
+              </div>
+              <span style={{ fontFamily: "Anton, sans-serif", fontSize: 20, color: m.finished ? "var(--ink)" : "var(--ink-3)", flexShrink: 0, padding: "0 6px" }}>
+                {m.finished && m.score[0] != null ? `${m.score[0]} × ${m.score[1]}` : "vs"}
+              </span>
+              <div style={{ display: "flex", alignItems: "center", gap: 7, flex: 1, minWidth: 0, justifyContent: "flex-end" }}>
+                <span style={{ fontWeight: 700, fontSize: 14.5, color: "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", textAlign: "right" }}>{m.b.n}</span>
+                <Flag code={m.b.c} size={22} />
+              </div>
+            </div>
+          </div>
+          {/* lista de palpites */}
+          <div style={{ overflowY: "auto", padding: "12px 14px 18px", display: "flex", flexDirection: "column", gap: 6 }}>
+            {predsLoading ? (
+              <p style={{ fontSize: 13, color: "var(--ink-3)", textAlign: "center", padding: "20px 0", margin: 0 }}>Carregando...</p>
+            ) : preds.length === 0 ? (
+              <p style={{ fontSize: 13, color: "var(--ink-3)", textAlign: "center", padding: "20px 0", margin: 0 }}>Nenhum palpite registrado.</p>
+            ) : preds.map((p, i) => {
+              const name = p.profiles?.name ?? "Usuário";
+              let badge = null;
+              if (m.finished && m.score[0] != null && m.score[1] != null) {
+                const tipo = calcResultType([p.score_a, p.score_b], [m.score[0]!, m.score[1]!]);
+                const st = RESULT_STYLE[tipo];
+                badge = (
+                  <span style={{ fontSize: 11, fontWeight: 800, background: st.bg, color: st.color, borderRadius: 20, padding: "3px 9px", whiteSpace: "nowrap", flexShrink: 0 }}>
+                    {st.label} {st.pts}
+                  </span>
+                );
+              }
+              return (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 12, background: "var(--surface)", border: "1px solid var(--line)" }}>
+                  <div style={{ width: 30, height: 30, borderRadius: "50%", flexShrink: 0, background: "var(--primary-soft)", display: "grid", placeItems: "center", fontFamily: "Anton, sans-serif", fontSize: 11, color: "var(--primary-strong)" }}>
+                    {name.slice(0, 2).toUpperCase()}
+                  </div>
+                  <span style={{ flex: 1, fontSize: 13.5, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</span>
+                  <span style={{ fontSize: 14, fontWeight: 800, color: "var(--ink-2)", fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>{p.score_a} × {p.score_b}</span>
+                  {badge}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    )}
+  </>
   );
 }
