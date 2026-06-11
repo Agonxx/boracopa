@@ -120,6 +120,7 @@ export default function PalpitesPage() {
   const supabase = createClient();
 
   const [phase, setPhase] = useState("grupos");
+  const [pendingOnly, setPendingOnly] = useState(false);
   const phaseTabs = user?.isSuperAdmin ? PHASE_TABS_ALL : [PHASE_TABS_ALL[0], PHASE_TABS_ALL[2]];
   const [group, setGroup] = useState("A");
   const [round, setRound] = useState("oitavas");
@@ -140,6 +141,16 @@ export default function PalpitesPage() {
   }, [user?.id]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  useEffect(() => {
+    if (!isDate || loading) return;
+    const today = new Date();
+    const key = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
+    setTimeout(() => {
+      const el = document.querySelector(`[data-date="${key}"]`);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
+  }, [isDate, loading]);
 
   async function savePrediction(matchId: string, scoreA: number, scoreB: number) {
     if (!user) return;
@@ -171,6 +182,9 @@ export default function PalpitesPage() {
   const cardMatches = visibleMatches.map(m => toCardMatch(m, predMap[m.id]));
   const open = cardMatches.filter(m => !m.done && !m.upcoming).length;
   const dateGroups = isDate ? buildDateGroups(matches, predMap) : [];
+  const filteredDateGroups = pendingOnly
+    ? dateGroups.map(g => ({ ...g, items: g.items.filter(m => m.status === "open" && !predMap[m.id]) })).filter(g => g.items.length > 0)
+    : dateGroups;
 
   return (
     <div style={{
@@ -191,6 +205,19 @@ export default function PalpitesPage() {
 
       {isDate ? (
         <>
+          {/* filtro pendentes */}
+          <div style={{ display: "flex", justifyContent: "flex-end" }}>
+            <button onClick={() => setPendingOnly(v => !v)} style={{
+              height: 32, padding: "0 14px", borderRadius: 20, cursor: "pointer",
+              border: `1.5px solid ${pendingOnly ? "var(--primary-strong)" : "var(--line-strong)"}`,
+              background: pendingOnly ? "var(--primary-soft)" : "var(--surface)",
+              color: pendingOnly ? "var(--primary-strong)" : "var(--ink-3)",
+              fontFamily: "Archivo, sans-serif", fontWeight: 700, fontSize: 12.5,
+            }}>
+              {pendingOnly ? "✓ Só pendentes" : "Só pendentes"}
+            </button>
+          </div>
+
           {loading ? (
             <div style={{ display: "grid", gridTemplateColumns: isDesktop ? "1fr 1fr" : "1fr", gap: isDesktop ? 16 : 12 }}>
               {[...Array(6)].map((_, i) => (
@@ -200,24 +227,34 @@ export default function PalpitesPage() {
                 </div>
               ))}
             </div>
+          ) : filteredDateGroups.length === 0 ? (
+            <p style={{ fontSize: 13, color: "var(--ink-3)", textAlign: "center", padding: "24px 0" }}>
+              {pendingOnly ? "Nenhum jogo pendente. Todos os palpites em dia! 🎉" : "Nenhuma partida cadastrada."}
+            </p>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
-              {dateGroups.map(({ label, items }) => (
-                <div key={label} style={{ display: "flex", flexDirection: "column", gap: isDesktop ? 14 : 10 }}>
-                  <div style={{ fontFamily: "Anton, sans-serif", fontSize: 13, letterSpacing: 0.8, color: "var(--ink-3)", textTransform: "uppercase", paddingBottom: 6, borderBottom: "1px solid var(--line)" }}>
-                    {label} · {items.length} jogo{items.length !== 1 ? "s" : ""}
+              {filteredDateGroups.map(({ label, items }, gi) => {
+                const today = new Date();
+                const todayKey = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
+                const d = new Date(items[0].match_date);
+                const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+                return (
+                  <div key={label} data-date={key} style={{ display: "flex", flexDirection: "column", gap: isDesktop ? 14 : 10 }}>
+                    <div style={{ fontFamily: "Anton, sans-serif", fontSize: 13, letterSpacing: 0.8, color: key === todayKey ? "var(--primary-strong)" : "var(--ink-3)", textTransform: "uppercase", paddingBottom: 6, borderBottom: `1px solid ${key === todayKey ? "var(--primary-strong)" : "var(--line)"}` }}>
+                      {label} · {items.length} jogo{items.length !== 1 ? "s" : ""}
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: isDesktop ? "1fr 1fr" : "1fr", gap: isDesktop ? 16 : 12, alignItems: "start" }}>
+                      {items.map(m => {
+                        const cm = toCardMatch(m, predMap[m.id]);
+                        return (
+                          <MatchCard key={cm.id} m={cm} compact={!isDesktop}
+                            onSave={(a, b) => savePrediction(m.id, a, b)} />
+                        );
+                      })}
+                    </div>
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: isDesktop ? "1fr 1fr" : "1fr", gap: isDesktop ? 16 : 12, alignItems: "start" }}>
-                    {items.map(m => {
-                      const cm = toCardMatch(m, predMap[m.id]);
-                      return (
-                        <MatchCard key={cm.id} m={cm} compact={!isDesktop}
-                          onSave={(a, b) => savePrediction(m.id, a, b)} />
-                      );
-                    })}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
           <ScoringNote />
