@@ -37,6 +37,7 @@ export default function BolaoDetailPage() {
   const [bolao, setBolao] = useState<Bolao | null>(null);
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pendingOnly, setPendingOnly] = useState(false);
 
   const isOwner = bolao?.owner_id === user?.id;
   const paidCount = members.filter(m => m.paid).length;
@@ -153,10 +154,24 @@ export default function BolaoDetailPage() {
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <h2 style={{ margin: 0, fontFamily: "Anton, sans-serif", fontSize: 18, letterSpacing: 0.4, color: "var(--ink)" }}>Participantes</h2>
           {isOwner && bolao.entry_fee > 0 && (
-            <span style={{ fontSize: 11.5, color: "var(--ink-3)", fontWeight: 600 }}>toque para dar baixa no pagamento</span>
+            <span style={{ fontSize: 11.5, color: "var(--ink-3)", fontWeight: 600 }}>toque para dar baixa</span>
+          )}
+          {bolao.entry_fee > 0 && (
+            <button onClick={() => setPendingOnly(v => !v)} style={{
+              marginLeft: "auto", height: 28, padding: "0 12px", borderRadius: 20, cursor: "pointer",
+              border: `1.5px solid ${pendingOnly ? "var(--live)" : "var(--line-strong)"}`,
+              background: pendingOnly ? "#fff5f5" : "var(--surface)",
+              color: pendingOnly ? "var(--live)" : "var(--ink-3)",
+              fontFamily: "Archivo, sans-serif", fontWeight: 700, fontSize: 12,
+            }}>
+              {pendingOnly ? "✓ Pendentes" : "Pendentes"}
+            </button>
           )}
         </div>
-        {members.map((m) => {
+        {[...members]
+          .sort((a, b) => (a.profiles?.name ?? "").localeCompare(b.profiles?.name ?? "", "pt-BR"))
+          .filter(m => !pendingOnly || !m.paid)
+          .map((m) => {
           const isMe = m.user_id === user?.id;
           const isBolaoDono = m.user_id === bolao.owner_id;
           return (
