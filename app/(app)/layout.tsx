@@ -53,13 +53,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     async function loadUser() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { setHydrated(); return; }
-      const { data: profile } = await supabase
-        .from("profiles").select("id, name, is_super_admin").eq("id", session.user.id).single();
+      const [{ data: profile }, { data: ptsRows }] = await Promise.all([
+        supabase.from("profiles").select("id, name, is_super_admin").eq("id", session.user.id).single(),
+        supabase.from("predictions").select("pts_earned").eq("user_id", session.user.id),
+      ]);
+      const pts = ptsRows?.reduce((sum, p: any) => sum + (p.pts_earned ?? 0), 0) ?? 0;
       setUser({
         id: session.user.id,
         name: profile?.name ?? session.user.email?.split("@")[0] ?? "Usuário",
         email: session.user.email ?? "",
-        pts: 0,
+        pts,
         isSuperAdmin: profile?.is_super_admin ?? false,
       });
       setHydrated();
