@@ -53,11 +53,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     async function loadUser() {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) { setHydrated(); return; }
-      const [{ data: profile }, { data: ptsRows }] = await Promise.all([
+      const [{ data: profile }, { data: memberRow }] = await Promise.all([
         supabase.from("profiles").select("id, name, is_super_admin").eq("id", session.user.id).single(),
-        supabase.from("predictions").select("pts_earned").eq("user_id", session.user.id),
+        supabase.from("bolao_members").select("pts").eq("user_id", session.user.id).limit(1).maybeSingle(),
       ]);
-      const pts = ptsRows?.reduce((sum, p: any) => sum + (p.pts_earned ?? 0), 0) ?? 0;
+      const pts = (memberRow as any)?.pts ?? 0;
       setUser({
         id: session.user.id,
         name: profile?.name ?? session.user.email?.split("@")[0] ?? "Usuário",

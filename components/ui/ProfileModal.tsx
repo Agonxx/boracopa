@@ -31,11 +31,11 @@ function Body({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     if (!user) return;
     async function fetch() {
-      const [{ count: p }, { count: c }] = await Promise.all([
+      const [{ count: p }, { data: memberRow }] = await Promise.all([
         supabase.from("predictions").select("id", { count: "exact", head: true }).eq("user_id", user!.id),
-        supabase.from("predictions").select("id", { count: "exact", head: true }).eq("user_id", user!.id).eq("pts_earned", 5),
+        supabase.from("bolao_members").select("cravadas").eq("user_id", user!.id).limit(1).maybeSingle(),
       ]);
-      setStats({ palpites: p ?? 0, cravadas: c ?? 0 });
+      setStats({ palpites: p ?? 0, cravadas: (memberRow as any)?.cravadas ?? 0 });
     }
     fetch();
   }, [user?.id]);
