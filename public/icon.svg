@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#15803d"/>
+  <text x="256" y="230"
+    font-family="Arial Black, Impact, sans-serif"
+    font-size="175" font-weight="900"
+    fill="white" text-anchor="middle" letter-spacing="-4">BORA</text>
+  <text x="256" y="400"
+    font-family="Arial Black, Impact, sans-serif"
+    font-size="175" font-weight="900"
+    fill="#86efac" text-anchor="middle" letter-spacing="-4">COPA</text>
+</svg>

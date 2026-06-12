@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Anton, Archivo } from "next/font/google";
 import "./globals.css";
 
@@ -14,9 +14,23 @@ const archivo = Archivo({
   subsets: ["latin"],
 });
 
+export const viewport: Viewport = {
+  themeColor: "#15803d",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+};
+
 export const metadata: Metadata = {
   title: "BoraCopa",
   description: "O bolão da firma · Copa 2026",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "BoraCopa",
+  },
+  icons: { apple: "/icon.svg" },
 };
 
 export default function RootLayout({
