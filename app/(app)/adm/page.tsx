@@ -212,6 +212,16 @@ export default function AdmPage() {
 
   const closedMatches = matches.filter(m => m.status === "closed" || m.status === "open");
 
+  const teamOptions = (() => {
+    const seen = new Set<string>();
+    const result: { name: string; code: string }[] = [];
+    for (const m of matches) {
+      if (!seen.has(m.team_a)) { seen.add(m.team_a); result.push({ name: m.team_a, code: m.code_a }); }
+      if (!seen.has(m.team_b)) { seen.add(m.team_b); result.push({ name: m.team_b, code: m.code_b }); }
+    }
+    return result.sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+  })();
+
   return (
     <div className="p-4 lg:p-8 max-w-3xl mx-auto" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
       <h1 style={{ fontFamily: "Anton, sans-serif", fontSize: 28, letterSpacing: 0.3, color: "var(--ink)", margin: 0 }}>CENTRAL ADM</h1>
@@ -266,14 +276,28 @@ export default function AdmPage() {
               </div>
             )}
 
-            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 8 }}>
-              <Field label="Time A"><input value={f.team_a} onChange={e => setF(p => ({ ...p, team_a: e.target.value }))} placeholder="Brasil" style={fieldStyle} /></Field>
-              <Field label="Código A"><input value={f.code_a} onChange={e => setF(p => ({ ...p, code_a: e.target.value }))} placeholder="BR" maxLength={3} style={fieldStyle} /></Field>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 8 }}>
-              <Field label="Time B"><input value={f.team_b} onChange={e => setF(p => ({ ...p, team_b: e.target.value }))} placeholder="Argentina" style={fieldStyle} /></Field>
-              <Field label="Código B"><input value={f.code_b} onChange={e => setF(p => ({ ...p, code_b: e.target.value }))} placeholder="AR" maxLength={3} style={fieldStyle} /></Field>
-            </div>
+            <Field label="Time A">
+              <select value={f.team_a} onChange={e => {
+                const t = teamOptions.find(t => t.name === e.target.value);
+                setF(p => ({ ...p, team_a: e.target.value, code_a: t?.code ?? "" }));
+              }} style={fieldStyle}>
+                <option value="">Selecione o time A...</option>
+                {teamOptions.map(t => (
+                  <option key={t.name} value={t.name}>{t.name} ({t.code})</option>
+                ))}
+              </select>
+            </Field>
+            <Field label="Time B">
+              <select value={f.team_b} onChange={e => {
+                const t = teamOptions.find(t => t.name === e.target.value);
+                setF(p => ({ ...p, team_b: e.target.value, code_b: t?.code ?? "" }));
+              }} style={fieldStyle}>
+                <option value="">Selecione o time B...</option>
+                {teamOptions.filter(t => t.name !== f.team_a).map(t => (
+                  <option key={t.name} value={t.name}>{t.name} ({t.code})</option>
+                ))}
+              </select>
+            </Field>
             <Field label="Data e hora">
               <input type="datetime-local" value={f.match_date} onChange={e => setF(p => ({ ...p, match_date: e.target.value }))} style={fieldStyle} />
             </Field>
