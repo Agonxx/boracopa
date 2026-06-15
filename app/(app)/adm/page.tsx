@@ -47,6 +47,46 @@ export default function AdmPage() {
   const [saving, setSaving] = useState(false);
   const [savedMsg, setSavedMsg] = useState("");
 
+  // palpite manual
+  const [manualPred, setManualPred] = useState({ userId: "", matchId: "", scoreA: "", scoreB: "" });
+  const [manualSaving, setManualSaving] = useState(false);
+  const [manualMsg, setManualMsg] = useState("");
+  const [admUsers, setAdmUsers] = useState<{ id: string; name: string | null; email: string }[]>([]);
+  const [admUsersLoaded, setAdmUsersLoaded] = useState(false);
+
+  async function loadAdmUsers() {
+    if (admUsersLoaded) return;
+    const { data } = await supabase.rpc("get_all_users_for_admin");
+    setAdmUsers((data as any[]) ?? []);
+    setAdmUsersLoaded(true);
+  }
+
+  async function handleManualPred(e: React.FormEvent) {
+    e.preventDefault();
+    if (!manualPred.userId || !manualPred.matchId || manualPred.scoreA === "" || manualPred.scoreB === "") return;
+    setManualSaving(true);
+    const { error } = await supabase.from("predictions").upsert({
+      user_id: manualPred.userId,
+      match_id: manualPred.matchId,
+      score_a: parseInt(manualPred.scoreA),
+      score_b: parseInt(manualPred.scoreB),
+    }, { onConflict: "user_id,match_id" });
+    if (!error) {
+      const match = matches.find(m => m.id === manualPred.matchId);
+      if (match?.status === "finished") {
+        await supabase.rpc("recalculate_all_points");
+        setManualMsg("Palpite cadastrado e pontos recalculados!");
+      } else {
+        setManualMsg("Palpite cadastrado com sucesso!");
+      }
+      setManualPred({ userId: "", matchId: "", scoreA: "", scoreB: "" });
+    } else {
+      setManualMsg(`Erro: ${error.message}`);
+    }
+    setManualSaving(false);
+    setTimeout(() => setManualMsg(""), 5000);
+  }
+
   // usuarios
   interface UserRow { id: string; email: string; name: string | null; created_at: string; }
   const [users, setUsers] = useState<UserRow[]>([]);
@@ -304,6 +344,60 @@ export default function AdmPage() {
 
             <button type="submit" disabled={saving} style={{ height: 48, borderRadius: 12, border: "none", background: "var(--primary)", color: "var(--on-primary)", fontFamily: "Archivo, sans-serif", fontWeight: 800, fontSize: 15, cursor: "pointer", boxShadow: "0 4px 0 var(--primary-strong)", opacity: saving ? 0.7 : 1 }}>
               {saving ? "Salvando..." : "Adicionar partida →"}
+            </button>
+          </form>
+
+          {/* palpite manual */}
+          <form onSubmit={handleManualPred} style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--line)", padding: "18px 18px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
+            <p style={{ fontFamily: "Anton, sans-serif", fontSize: 14, letterSpacing: 1, color: "var(--ink-3)", textTransform: "uppercase", margin: 0 }}>Cadastrar palpite manual</p>
+            {manualMsg && (
+              <div style={{ background: manualMsg.startsWith("Erro") ? "#fff0f0" : "var(--primary-soft)", borderRadius: 12, padding: "10px 14px", fontSize: 13.5, fontWeight: 700, color: manualMsg.startsWith("Erro") ? "#c0392b" : "var(--primary-strong)" }}>
+                {manualMsg.startsWith("Erro") ? manualMsg : `✓ ${manualMsg}`}
+              </div>
+            )}
+            <Field label="Usuário">
+              <select
+                value={manualPred.userId}
+                onFocus={loadAdmUsers}
+                onChange={e => setManualPred(p => ({ ...p, userId: e.target.value }))}
+                style={fieldStyle}
+              >
+                <option value="">Selecione o usuário...</option>
+                {[...admUsers]
+                  .sort((a, b) => (a.name ?? a.email).localeCompare(b.name ?? b.email, "pt-BR"))
+                  .map(u => (
+                    <option key={u.id} value={u.id}>{u.name ?? "(sem nome)"} — {u.email}</option>
+                  ))}
+              </select>
+            </Field>
+            <Field label="Partida">
+              <select
+                value={manualPred.matchId}
+                onChange={e => setManualPred(p => ({ ...p, matchId: e.target.value }))}
+                style={fieldStyle}
+              >
+                <option value="">Selecione a partida...</option>
+                {matches.map(m => (
+                  <option key={m.id} value={m.id}>
+                    {m.team_a} vs {m.team_b} · {new Date(m.match_date).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })} [{STATUS_LABEL[m.status]}]
+                  </option>
+                ))}
+              </select>
+            </Field>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <Field label={matches.find(m => m.id === manualPred.matchId)?.team_a ?? "Gols Time A"}>
+                <input type="number" min={0} max={20} value={manualPred.scoreA} onChange={e => setManualPred(p => ({ ...p, scoreA: e.target.value }))} placeholder="0" style={fieldStyle} />
+              </Field>
+              <Field label={matches.find(m => m.id === manualPred.matchId)?.team_b ?? "Gols Time B"}>
+                <input type="number" min={0} max={20} value={manualPred.scoreB} onChange={e => setManualPred(p => ({ ...p, scoreB: e.target.value }))} placeholder="0" style={fieldStyle} />
+              </Field>
+            </div>
+            <button
+              type="submit"
+              disabled={manualSaving || !manualPred.userId || !manualPred.matchId || manualPred.scoreA === "" || manualPred.scoreB === ""}
+              style={{ height: 48, borderRadius: 12, border: "none", background: "var(--ink)", color: "var(--surface)", fontFamily: "Archivo, sans-serif", fontWeight: 800, fontSize: 15, cursor: "pointer", opacity: (!manualPred.userId || !manualPred.matchId || manualPred.scoreA === "" || manualPred.scoreB === "") ? 0.5 : 1 }}
+            >
+              {manualSaving ? "Salvando..." : "Cadastrar palpite →"}
             </button>
           </form>
 
