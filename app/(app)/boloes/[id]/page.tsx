@@ -6,6 +6,7 @@ import { Copy, Check, Users, Crown, ChevronLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { useAuthStore } from "@/store/auth";
 import { useBolaoStore } from "@/store/bolao";
+import UserPredictionsModal from "@/components/ui/UserPredictionsModal";
 
 interface Bolao {
   id: string; name: string; owner_id: string; invite_code: string;
@@ -38,6 +39,7 @@ export default function BolaoDetailPage() {
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [pendingOnly, setPendingOnly] = useState(false);
+  const [predUser, setPredUser] = useState<{ id: string; name: string } | null>(null);
 
   const isOwner = bolao?.owner_id === user?.id;
   const paidCount = members.filter(m => m.paid).length;
@@ -186,14 +188,19 @@ export default function BolaoDetailPage() {
                 cursor: isOwner && bolao.entry_fee > 0 ? "pointer" : "default",
                 boxShadow: isMe ? "0 6px 16px -8px var(--primary-strong)" : "0 1px 2px rgba(26,24,20,.03)",
               }}>
-              <div style={{
-                width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
-                background: isMe ? "rgba(255,255,255,.25)" : "var(--app-bg)",
-                border: isMe ? "none" : "1.5px solid var(--line-strong)",
-                display: "grid", placeItems: "center",
-                fontFamily: "Anton, sans-serif", fontSize: 14,
-                color: isMe ? "var(--on-primary)" : "var(--ink-2)",
-              }}>
+              <div
+                onClick={e => { e.stopPropagation(); setPredUser({ id: m.user_id, name: m.profiles?.name ?? "Usuário" }); }}
+                title="Ver palpites"
+                style={{
+                  width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
+                  background: isMe ? "rgba(255,255,255,.25)" : "var(--app-bg)",
+                  border: isMe ? "none" : "1.5px solid var(--line-strong)",
+                  display: "grid", placeItems: "center",
+                  fontFamily: "Anton, sans-serif", fontSize: 14,
+                  color: isMe ? "var(--on-primary)" : "var(--ink-2)",
+                  cursor: "pointer",
+                }}
+              >
                 {m.profiles?.name?.slice(0, 2).toUpperCase() ?? "??"}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -230,6 +237,10 @@ export default function BolaoDetailPage() {
         <button onClick={handleDelete} style={{ marginTop: 8, height: 44, borderRadius: 12, border: "1.5px solid #e74c3c", background: "transparent", fontFamily: "Archivo, sans-serif", fontWeight: 700, fontSize: 13.5, color: "#e74c3c", cursor: "pointer" }}>
           Excluir bolão
         </button>
+      )}
+
+      {predUser && (
+        <UserPredictionsModal userId={predUser.id} userName={predUser.name} onClose={() => setPredUser(null)} />
       )}
     </div>
   );

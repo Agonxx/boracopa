@@ -8,6 +8,7 @@ import { useBolaoStore } from "@/store/bolao";
 import { createClient } from "@/lib/supabase/client";
 import { Trophy } from "lucide-react";
 import Skeleton from "@/components/ui/Skeleton";
+import UserPredictionsModal from "@/components/ui/UserPredictionsModal";
 
 interface RankEntry {
   pos: number; name: string; pts: number; cravadas: number; init: string; you: boolean; user_id: string;
@@ -15,20 +16,25 @@ interface RankEntry {
 
 const RANK_FILTERS = ["Geral", "Fase de grupos", "Mata-mata"];
 
-function RankAvatar({ init, size = 36, you }: { init: string; size?: number; you?: boolean }) {
+function RankAvatar({ init, size = 36, you, onClick }: { init: string; size?: number; you?: boolean; onClick?: () => void }) {
   return (
-    <div style={{ width: size, height: size, borderRadius: "50%", flexShrink: 0, background: you ? "linear-gradient(135deg, var(--primary) 0%, var(--primary-strong) 100%)" : "var(--app-bg)", border: you ? "none" : "1.5px solid var(--line-strong)", display: "grid", placeItems: "center", color: you ? "var(--on-primary)" : "var(--ink-2)", fontFamily: "Anton, sans-serif", fontSize: size * 0.4, letterSpacing: 0.3 }}>{init}</div>
+    <div
+      onClick={onClick}
+      style={{ width: size, height: size, borderRadius: "50%", flexShrink: 0, background: you ? "linear-gradient(135deg, var(--primary) 0%, var(--primary-strong) 100%)" : "var(--app-bg)", border: you ? "none" : "1.5px solid var(--line-strong)", display: "grid", placeItems: "center", color: you ? "var(--on-primary)" : "var(--ink-2)", fontFamily: "Anton, sans-serif", fontSize: size * 0.4, letterSpacing: 0.3, cursor: onClick ? "pointer" : "default" }}
+    >
+      {init}
+    </div>
   );
 }
 
-function PodiumCol({ r, place }: { r: RankEntry; place: 1 | 2 | 3 }) {
+function PodiumCol({ r, place, onAvatarClick }: { r: RankEntry; place: 1 | 2 | 3; onAvatarClick: (r: RankEntry) => void }) {
   const heights: Record<number, number> = { 1: 96, 2: 74, 3: 62 };
   const sizes: Record<number, number> = { 1: 60, 2: 50, 3: 50 };
   const isFirst = place === 1;
   return (
     <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 8, justifyContent: "flex-end" }}>
       <div style={{ position: "relative" }}>
-        <RankAvatar init={r.init} size={sizes[place]} you={r.you} />
+        <RankAvatar init={r.init} size={sizes[place]} you={r.you} onClick={() => onAvatarClick(r)} />
         <div style={{ position: "absolute", bottom: -4, left: "50%", transform: "translateX(-50%)", width: 22, height: 22, borderRadius: "50%", background: isFirst ? "var(--primary)" : "var(--ink)", color: isFirst ? "var(--on-primary)" : "var(--surface)", border: "2px solid var(--app-bg)", display: "grid", placeItems: "center", fontFamily: "Anton, sans-serif", fontSize: 12 }}>{place}</div>
       </div>
       <div style={{ textAlign: "center", marginTop: 2 }}>
@@ -40,11 +46,11 @@ function PodiumCol({ r, place }: { r: RankEntry; place: 1 | 2 | 3 }) {
   );
 }
 
-function RankRow({ r }: { r: RankEntry }) {
+function RankRow({ r, onAvatarClick }: { r: RankEntry; onAvatarClick: (r: RankEntry) => void }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 13px", borderRadius: 14, background: r.you ? "var(--primary)" : "var(--surface)", border: r.you ? "none" : "1px solid var(--line)", boxShadow: r.you ? "0 6px 16px -8px var(--primary-strong)" : "0 1px 2px rgba(26,24,20,.03)", color: r.you ? "var(--on-primary)" : "var(--ink)" }}>
       <span style={{ width: 22, textAlign: "center", fontFamily: "Anton, sans-serif", fontSize: 17, color: r.you ? "var(--on-primary)" : "var(--ink-3)" }}>{r.pos}</span>
-      <RankAvatar init={r.init} size={34} you={r.you} />
+      <RankAvatar init={r.init} size={34} you={r.you} onClick={() => onAvatarClick(r)} />
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 14, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
           {r.name}{r.you && <span style={{ opacity: 0.85, fontWeight: 600 }}> · você</span>}
@@ -58,12 +64,12 @@ function RankRow({ r }: { r: RankEntry }) {
   );
 }
 
-function DeskRow({ r }: { r: RankEntry }) {
+function DeskRow({ r, onAvatarClick }: { r: RankEntry; onAvatarClick: (r: RankEntry) => void }) {
   return (
     <div style={{ display: "grid", gridTemplateColumns: "48px 1fr 110px 110px", alignItems: "center", gap: 10, padding: "12px 16px", borderRadius: 14, background: r.you ? "var(--primary)" : "var(--surface)", border: r.you ? "none" : "1px solid var(--line)", color: r.you ? "var(--on-primary)" : "var(--ink)", boxShadow: r.you ? "0 8px 20px -10px var(--primary-strong)" : "0 1px 2px rgba(26,24,20,.03)" }}>
       <span style={{ fontFamily: "Anton, sans-serif", fontSize: 18, color: r.you ? "var(--on-primary)" : r.pos <= 3 ? "var(--primary-strong)" : "var(--ink-3)", textAlign: "center" }}>{r.pos}</span>
       <div style={{ display: "flex", alignItems: "center", gap: 11, minWidth: 0 }}>
-        <RankAvatar init={r.init} size={34} you={r.you} />
+        <RankAvatar init={r.init} size={34} you={r.you} onClick={() => onAvatarClick(r)} />
         <span style={{ fontSize: 14, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
           {r.name}{r.you && <span style={{ opacity: 0.85, fontWeight: 600 }}> · você</span>}
         </span>
@@ -85,6 +91,8 @@ export default function RankingPage() {
   const [filter, setFilter] = useState("Geral");
   const [rank, setRank] = useState<RankEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [predUser, setPredUser] = useState<{ id: string; name: string } | null>(null);
+  function openPredUser(r: RankEntry) { setPredUser({ id: r.user_id, name: r.name }); }
 
   const fetchRanking = useCallback(async () => {
     if (!activeBolaoId || !user) { setLoading(false); return; }
@@ -229,9 +237,9 @@ export default function RankingPage() {
               <div style={{ width: isDesktop ? 320 : "100%", flexShrink: 0, background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 20, padding: "20px 20px 0", marginBottom: isDesktop ? 0 : 14 }}>
                 {isDesktop && <div style={{ fontFamily: "Anton, sans-serif", fontSize: 13, letterSpacing: 1, color: "var(--ink-3)", textTransform: "uppercase", marginBottom: 14 }}>Pódio</div>}
                 <div style={{ display: "flex", alignItems: "flex-end", gap: 10 }}>
-                  <PodiumCol r={top3[1]} place={2} />
-                  <PodiumCol r={top3[0]} place={1} />
-                  <PodiumCol r={top3[2]} place={3} />
+                  <PodiumCol r={top3[1]} place={2} onAvatarClick={openPredUser} />
+                  <PodiumCol r={top3[0]} place={1} onAvatarClick={openPredUser} />
+                  <PodiumCol r={top3[2]} place={3} onAvatarClick={openPredUser} />
                 </div>
               </div>
               {isDesktop && me && (
@@ -259,12 +267,16 @@ export default function RankingPage() {
               </div>
             )}
             {isDesktop
-              ? rank.map((r) => <DeskRow key={r.user_id} r={r} />)
-              : rank.slice(top3.length >= 3 ? 3 : 0).map((r) => <RankRow key={r.user_id} r={r} />)
+              ? rank.map((r) => <DeskRow key={r.user_id} r={r} onAvatarClick={openPredUser} />)
+              : rank.slice(top3.length >= 3 ? 3 : 0).map((r) => <RankRow key={r.user_id} r={r} onAvatarClick={openPredUser} />)
             }
             {rank.length === 0 && <p style={{ fontSize: 13, color: "var(--ink-3)" }}>Nenhum participante ainda.</p>}
           </div>
         </>
+      )}
+
+      {predUser && (
+        <UserPredictionsModal userId={predUser.id} userName={predUser.name} onClose={() => setPredUser(null)} />
       )}
 
       {/* barra "sua posição" mobile */}

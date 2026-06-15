@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/auth";
 import { createClient } from "@/lib/supabase/client";
+import UserPredictionsModal from "@/components/ui/UserPredictionsModal";
 
 interface Match {
   id: string; phase: string; group_name: string | null; round: number | null;
@@ -38,7 +39,9 @@ export default function AdmPage() {
   const router = useRouter();
   const supabase = createClient();
 
-  const [tab, setTab] = useState<"partidas" | "resultados" | "importar" | "usuarios">("partidas");
+  const [mainTab, setMainTab] = useState<"jogos" | "usuarios">("jogos");
+  const [jogosTab, setJogosTab] = useState<"partidas" | "resultados" | "importar">("partidas");
+  const [usuariosTab, setUsuariosTab] = useState<"usuarios" | "boloes">("usuarios");
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -91,6 +94,39 @@ export default function AdmPage() {
   interface UserRow { id: string; email: string; name: string | null; created_at: string; }
   const [users, setUsers] = useState<UserRow[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
+
+  // boloes (adm)
+  interface BolaoAdmRow { id: string; name: string; invite_code: string; entry_fee: number; memberCount: number; }
+  interface BolaoMemberRow { user_id: string; pts: number; cravadas: number; paid: boolean; profiles: { name: string } | null; }
+  const [boloesAdm, setBoloesAdm] = useState<BolaoAdmRow[]>([]);
+  const [boloesAdmLoading, setBoloesAdmLoading] = useState(false);
+  const [selectedBolao, setSelectedBolao] = useState<BolaoAdmRow | null>(null);
+  const [bolaoMembers, setBolaoMembers] = useState<BolaoMemberRow[]>([]);
+  const [bolaoMembersLoading, setBolaoMembersLoading] = useState(false);
+  const [predUser, setPredUser] = useState<{ id: string; name: string } | null>(null);
+
+  async function fetchBoloesAdm() {
+    setBoloesAdmLoading(true);
+    const { data } = await supabase.from("boloes").select("id, name, invite_code, entry_fee, bolao_members(count)").order("name");
+    setBoloesAdm((data ?? []).map((b: any) => ({
+      id: b.id, name: b.name, invite_code: b.invite_code, entry_fee: b.entry_fee,
+      memberCount: b.bolao_members?.[0]?.count ?? 0,
+    })));
+    setBoloesAdmLoading(false);
+  }
+
+  async function openBolaoModal(b: BolaoAdmRow) {
+    setSelectedBolao(b);
+    setBolaoMembers([]);
+    setBolaoMembersLoading(true);
+    const { data } = await supabase
+      .from("bolao_members")
+      .select("user_id, pts, cravadas, paid, profiles(name)")
+      .eq("bolao_id", b.id)
+      .order("pts", { ascending: false });
+    setBolaoMembers((data ?? []) as unknown as BolaoMemberRow[]);
+    setBolaoMembersLoading(false);
+  }
   const [resetMsg, setResetMsg] = useState<Record<string, string>>({});
   const [userSearch, setUserSearch] = useState("");
   const [userSort, setUserSort] = useState<"name" | "recent">("recent");
@@ -272,16 +308,38 @@ export default function AdmPage() {
         </div>
       )}
 
-      {/* tabs */}
-      <div style={{ display: "flex", gap: 4, background: "var(--surface)", border: "1px solid var(--line-strong)", borderRadius: 14, padding: 4, width: "100%", overflowX: "auto" }}>
-        {(["partidas", "resultados", "importar", "usuarios"] as const).map((t) => (
-          <button key={t} onClick={() => { setTab(t); if (t === "usuarios") fetchUsers(); }} style={{ flex: 1, minWidth: "fit-content", padding: "9px 14px", borderRadius: 10, border: "none", cursor: "pointer", fontFamily: "Archivo, sans-serif", fontWeight: 800, fontSize: 13.5, background: tab === t ? "var(--ink)" : "transparent", color: tab === t ? "var(--surface)" : "var(--ink-2)", transition: "all .12s", whiteSpace: "nowrap" }}>
-            {t === "partidas" ? "Partidas" : t === "resultados" ? "Resultados" : t === "importar" ? "Importar" : "Usuários"}
+      {/* main tabs */}
+      <div style={{ display: "flex", gap: 4, background: "var(--surface)", border: "1px solid var(--line-strong)", borderRadius: 14, padding: 4 }}>
+        {(["jogos", "usuarios"] as const).map(t => (
+          <button key={t} onClick={() => setMainTab(t)} style={{ flex: 1, padding: "9px 14px", borderRadius: 10, border: "none", cursor: "pointer", fontFamily: "Archivo, sans-serif", fontWeight: 800, fontSize: 14, background: mainTab === t ? "var(--ink)" : "transparent", color: mainTab === t ? "var(--surface)" : "var(--ink-2)", transition: "all .12s" }}>
+            {t === "jogos" ? "Jogos" : "Usuários"}
           </button>
         ))}
       </div>
 
-      {tab === "partidas" && (
+      {/* sub tabs — jogos */}
+      {mainTab === "jogos" && (
+        <div style={{ display: "flex", gap: 4, background: "var(--surface)", border: "1px solid var(--line-strong)", borderRadius: 12, padding: 4 }}>
+          {(["partidas", "resultados", "importar"] as const).map(t => (
+            <button key={t} onClick={() => setJogosTab(t)} style={{ flex: 1, minWidth: "fit-content", padding: "7px 12px", borderRadius: 9, border: "none", cursor: "pointer", fontFamily: "Archivo, sans-serif", fontWeight: 700, fontSize: 12.5, background: jogosTab === t ? "var(--primary)" : "transparent", color: jogosTab === t ? "var(--on-primary)" : "var(--ink-2)", transition: "all .12s", whiteSpace: "nowrap" }}>
+              {t === "partidas" ? "Partidas" : t === "resultados" ? "Resultados" : "Importar"}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* sub tabs — usuarios */}
+      {mainTab === "usuarios" && (
+        <div style={{ display: "flex", gap: 4, background: "var(--surface)", border: "1px solid var(--line-strong)", borderRadius: 12, padding: 4 }}>
+          {(["usuarios", "boloes"] as const).map(t => (
+            <button key={t} onClick={() => { setUsuariosTab(t); if (t === "usuarios") fetchUsers(); if (t === "boloes") fetchBoloesAdm(); }} style={{ flex: 1, padding: "7px 12px", borderRadius: 9, border: "none", cursor: "pointer", fontFamily: "Archivo, sans-serif", fontWeight: 700, fontSize: 12.5, background: usuariosTab === t ? "var(--primary)" : "transparent", color: usuariosTab === t ? "var(--on-primary)" : "var(--ink-2)", transition: "all .12s" }}>
+              {t === "usuarios" ? "Usuários" : "Bolões"}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {mainTab === "jogos" && jogosTab === "partidas" && (
         <>
           {/* form nova partida */}
           <form onSubmit={handleAddMatch} style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--line)", padding: "18px 18px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
@@ -423,7 +481,7 @@ export default function AdmPage() {
         </>
       )}
 
-      {tab === "resultados" && (
+      {mainTab === "jogos" && jogosTab === "resultados" && (
         <>
           <form onSubmit={handlePublishResult} style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--line)", padding: "18px 18px 20px", display: "flex", flexDirection: "column", gap: 14 }}>
             <p style={{ fontFamily: "Anton, sans-serif", fontSize: 14, letterSpacing: 1, color: "var(--ink-3)", textTransform: "uppercase", margin: 0 }}>Publicar resultado</p>
@@ -502,7 +560,7 @@ export default function AdmPage() {
         </>
       )}
 
-      {tab === "usuarios" && (
+      {mainTab === "usuarios" && usuariosTab === "usuarios" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <p style={{ fontFamily: "Anton, sans-serif", fontSize: 14, letterSpacing: 1, color: "var(--ink-3)", textTransform: "uppercase", margin: 0 }}>
@@ -575,7 +633,7 @@ export default function AdmPage() {
         </div>
       )}
 
-      {tab === "importar" && (
+      {mainTab === "jogos" && jogosTab === "importar" && (
         <div style={{ background: "var(--surface)", borderRadius: 18, border: "1px solid var(--line)", padding: "18px 18px 22px", display: "flex", flexDirection: "column", gap: 16 }}>
           <div>
             <p style={{ fontFamily: "Anton, sans-serif", fontSize: 14, letterSpacing: 1, color: "var(--ink-3)", textTransform: "uppercase", margin: "0 0 6px" }}>Importar Copa 2026</p>
@@ -661,6 +719,106 @@ export default function AdmPage() {
               Apagar todas as partidas
             </button>
           </div>
+        </div>
+      )}
+
+      {mainTab === "usuarios" && usuariosTab === "boloes" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <p style={{ fontFamily: "Anton, sans-serif", fontSize: 14, letterSpacing: 1, color: "var(--ink-3)", textTransform: "uppercase", margin: 0 }}>
+              Bolões ({boloesAdm.length})
+            </p>
+            <button onClick={fetchBoloesAdm} style={{ marginLeft: "auto", height: 32, padding: "0 14px", borderRadius: 8, border: "1.5px solid var(--line-strong)", background: "transparent", fontFamily: "Archivo, sans-serif", fontWeight: 700, fontSize: 12.5, color: "var(--ink-2)", cursor: "pointer" }}>
+              Atualizar
+            </button>
+          </div>
+
+          {boloesAdmLoading && <p style={{ fontSize: 13, color: "var(--ink-3)" }}>Carregando...</p>}
+
+          {!boloesAdmLoading && boloesAdm.length === 0 && (
+            <p style={{ fontSize: 13, color: "var(--ink-3)" }}>Nenhum bolão encontrado.</p>
+          )}
+
+          {boloesAdm.map(b => (
+            <div key={b.id} onClick={() => openBolaoModal(b)} style={{ background: "var(--surface)", borderRadius: 14, border: "1px solid var(--line)", padding: "14px 16px", display: "flex", alignItems: "center", gap: 14, cursor: "pointer" }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ margin: "0 0 4px", fontWeight: 800, fontSize: 14.5, color: "var(--ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {b.name}
+                </p>
+                <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 12, color: "var(--ink-2)", fontWeight: 600 }}>
+                    {b.memberCount} participante{b.memberCount !== 1 ? "s" : ""}
+                  </span>
+                  {b.entry_fee > 0 && (
+                    <span style={{ fontSize: 12, color: "var(--ink-2)", fontWeight: 600 }}>
+                      · R$ {b.entry_fee.toFixed(2)}
+                    </span>
+                  )}
+                  <span style={{ fontFamily: "monospace", fontSize: 11.5, color: "var(--ink-3)", background: "var(--app-bg)", borderRadius: 6, padding: "2px 7px", border: "1px solid var(--line)" }}>
+                    {b.invite_code}
+                  </span>
+                </div>
+              </div>
+              <svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="var(--ink-3)" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d="M9 18l6-6-6-6" /></svg>
+            </div>
+          ))}
+
+          {/* modal palpites de membro */}
+          {predUser && (
+            <UserPredictionsModal userId={predUser.id} userName={predUser.name} onClose={() => setPredUser(null)} />
+          )}
+
+          {/* modal membros do bolão */}
+          {selectedBolao && (
+            <div style={{ position: "fixed", inset: 0, zIndex: 60, display: "grid", placeItems: "center", padding: 16 }}>
+              <div onClick={() => setSelectedBolao(null)} style={{ position: "absolute", inset: 0, background: "rgba(20,18,14,.55)" }} />
+              <div style={{ position: "relative", width: "100%", maxWidth: 460, background: "var(--app-bg)", borderRadius: 22, overflow: "hidden", boxShadow: "0 30px 80px -20px rgba(0,0,0,.5)", maxHeight: "80vh", display: "flex", flexDirection: "column" }}>
+                {/* header */}
+                <div style={{ padding: "16px 18px 14px", borderBottom: "1px solid var(--line)", flexShrink: 0, display: "flex", alignItems: "center", gap: 10 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ margin: 0, fontFamily: "Anton, sans-serif", fontSize: 16, letterSpacing: 0.3, color: "var(--ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{selectedBolao.name}</p>
+                    <p style={{ margin: "2px 0 0", fontSize: 12, color: "var(--ink-3)", fontWeight: 600 }}>
+                      {selectedBolao.memberCount} participante{selectedBolao.memberCount !== 1 ? "s" : ""} · código <span style={{ fontFamily: "monospace" }}>{selectedBolao.invite_code}</span>
+                    </p>
+                  </div>
+                  <button onClick={() => setSelectedBolao(null)} style={{ width: 30, height: 30, borderRadius: "50%", border: "1px solid var(--line-strong)", background: "var(--surface)", cursor: "pointer", display: "grid", placeItems: "center", flexShrink: 0 }}>
+                    <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                  </button>
+                </div>
+                {/* lista */}
+                <div style={{ overflowY: "auto", padding: "12px 14px 18px", display: "flex", flexDirection: "column", gap: 6 }}>
+                  {bolaoMembersLoading ? (
+                    <p style={{ fontSize: 13, color: "var(--ink-3)", textAlign: "center", padding: "20px 0", margin: 0 }}>Carregando...</p>
+                  ) : bolaoMembers.length === 0 ? (
+                    <p style={{ fontSize: 13, color: "var(--ink-3)", textAlign: "center", padding: "20px 0", margin: 0 }}>Sem membros.</p>
+                  ) : bolaoMembers.map((m, i) => {
+                    const name = m.profiles?.name ?? "Usuário";
+                    return (
+                      <div key={m.user_id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 12, background: "var(--surface)", border: "1px solid var(--line)" }}>
+                        <span style={{ fontFamily: "Anton, sans-serif", fontSize: 13, color: "var(--ink-3)", width: 20, textAlign: "right", flexShrink: 0 }}>{i + 1}</span>
+                        <div
+                          onClick={() => setPredUser({ id: m.user_id, name })}
+                          title="Ver palpites"
+                          style={{ width: 32, height: 32, borderRadius: "50%", flexShrink: 0, background: "var(--primary-soft)", display: "grid", placeItems: "center", fontFamily: "Anton, sans-serif", fontSize: 12, color: "var(--primary-strong)", cursor: "pointer" }}
+                        >
+                          {name.slice(0, 2).toUpperCase()}
+                        </div>
+                        <span style={{ flex: 1, fontSize: 13.5, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</span>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                          <span style={{ fontSize: 12, color: "var(--ink-2)", fontWeight: 600 }}>{m.cravadas} crav.</span>
+                          <span style={{ fontFamily: "Anton, sans-serif", fontSize: 15, color: "var(--primary-strong)" }}>{m.pts}</span>
+                          <span style={{ fontSize: 10, fontWeight: 800, color: "var(--primary-strong)", textTransform: "uppercase" }}>pts</span>
+                          <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 20, background: m.paid ? "var(--primary-soft)" : "var(--app-bg)", color: m.paid ? "var(--primary-strong)" : "var(--ink-3)", border: `1px solid ${m.paid ? "var(--primary-strong)" : "var(--line-strong)"}` }}>
+                            {m.paid ? "pago" : "pendente"}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

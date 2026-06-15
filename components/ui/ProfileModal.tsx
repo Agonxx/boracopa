@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { Trophy, ChevronRight, X, Shield, Pencil, Check } from "lucide-react";
 import { useAuthStore } from "@/store/auth";
 import { createClient } from "@/lib/supabase/client";
+import UserPredictionsModal from "@/components/ui/UserPredictionsModal";
 
-interface Stats { palpites: number; cravadas: number }
+interface Stats { palpites: number; cravadas: number; finishedCount: number }
 
 function useIsDesktop() {
   const [v, setV] = useState(false);
@@ -23,7 +24,8 @@ function Body({ onClose }: { onClose: () => void }) {
   const { user, logout } = useAuthStore();
   const router = useRouter();
   const supabase = createClient();
-  const [stats, setStats] = useState<Stats>({ palpites: 0, cravadas: 0 });
+  const [stats, setStats] = useState<Stats>({ palpites: 0, cravadas: 0, finishedCount: 0 });
+  const [showPreds, setShowPreds] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [nameValue, setNameValue] = useState(user?.name ?? "");
   const [savingName, setSavingName] = useState(false);
@@ -31,11 +33,12 @@ function Body({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     if (!user) return;
     async function fetch() {
-      const [{ count: p }, { data: memberRow }] = await Promise.all([
+      const [{ count: p }, { data: memberRow }, { count: finished }] = await Promise.all([
         supabase.from("predictions").select("id", { count: "exact", head: true }).eq("user_id", user!.id),
         supabase.from("bolao_members").select("cravadas").eq("user_id", user!.id).limit(1).maybeSingle(),
+        supabase.from("matches").select("id", { count: "exact", head: true }).eq("status", "finished"),
       ]);
-      setStats({ palpites: p ?? 0, cravadas: (memberRow as any)?.cravadas ?? 0 });
+      setStats({ palpites: p ?? 0, cravadas: (memberRow as any)?.cravadas ?? 0, finishedCount: finished ?? 0 });
     }
     fetch();
   }, [user?.id]);
@@ -43,8 +46,9 @@ function Body({ onClose }: { onClose: () => void }) {
   if (!user) return null;
 
   const initials = user.name.slice(0, 2).toUpperCase();
-  const aprov = stats.palpites > 0
-    ? `${Math.round((stats.cravadas / stats.palpites) * 100)}%`
+  const maxPts = stats.finishedCount * 5;
+  const aprov = maxPts > 0
+    ? `${Math.round((user.pts / maxPts) * 100)}%`
     : "–";
 
   const statItems = [
@@ -53,6 +57,10 @@ function Body({ onClose }: { onClose: () => void }) {
     { v: `${stats.cravadas}`, k: "cravados" },
     { v: aprov, k: "aproveit." },
   ];
+
+  if (showPreds) return (
+    <UserPredictionsModal userId={user.id} userName={user.name} onClose={() => setShowPreds(false)} />
+  );
 
   async function handleSaveName() {
     const trimmed = nameValue.trim();
@@ -76,7 +84,11 @@ function Body({ onClose }: { onClose: () => void }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 16, fontFamily: "Archivo, sans-serif" }}>
       {/* identidade */}
       <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-        <div style={{ width: 56, height: 56, borderRadius: "50%", flexShrink: 0, background: "linear-gradient(135deg, var(--primary) 0%, var(--primary-strong) 100%)", display: "grid", placeItems: "center", color: "var(--on-primary)", fontFamily: "Anton, sans-serif", fontSize: 22 }}>
+        <div
+          onClick={() => setShowPreds(true)}
+          title="Ver meus palpites"
+          style={{ width: 56, height: 56, borderRadius: "50%", flexShrink: 0, background: "linear-gradient(135deg, var(--primary) 0%, var(--primary-strong) 100%)", display: "grid", placeItems: "center", color: "var(--on-primary)", fontFamily: "Anton, sans-serif", fontSize: 22, cursor: "pointer" }}
+        >
           {initials}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
