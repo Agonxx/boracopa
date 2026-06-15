@@ -153,6 +153,10 @@ export default function MatchCard({ m, compact, knockout, onSave }: { m: Match; 
   const urgent = m.deadline?.urgent;
   const locked = m.done;
   const sz = 40;
+  // hasPred = usuário realmente palpitou (badge "palpitado" só acende aqui)
+  const hasPred = m.finished
+    ? (m.myPred?.[0] != null && m.myPred?.[1] != null)
+    : (m.score[0] != null && m.score[1] != null);
   const isLive = !m.finished && !!m.matchDate &&
     new Date(m.matchDate) <= new Date() &&
     (Date.now() - new Date(m.matchDate).getTime()) < 115 * 60 * 1000;
@@ -192,7 +196,7 @@ export default function MatchCard({ m, compact, knockout, onSave }: { m: Match; 
         <span style={{ marginLeft: "auto" }}>
           {isLive
             ? <span style={{ ...statusChip, color: "#dc2626", background: "#fef2f2", borderColor: "transparent", animation: "live-pulse 1.4s ease infinite" }}>● AO VIVO</span>
-            : (locked || confirmed)
+            : (hasPred || (!locked && confirmed))
               ? <span style={{ ...statusChip, color: "var(--primary-strong)", borderColor: "transparent", background: "var(--primary-soft)" }}>✓ palpitado</span>
               : urgent
                 ? <span style={{ ...statusChip, color: "#7a3b00", background: "var(--live-soft)", borderColor: "transparent" }}>fecha em {m.deadline?.label}</span>
