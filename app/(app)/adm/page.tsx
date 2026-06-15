@@ -108,7 +108,7 @@ export default function AdmPage() {
 
   async function handleRemoveMember(userId: string) {
     if (!selectedBolao) return;
-    await supabase.from("bolao_members").delete().eq("bolao_id", selectedBolao.id).eq("user_id", userId);
+    await supabase.rpc("admin_remove_bolao_member", { p_bolao_id: selectedBolao.id, p_user_id: userId });
     setBolaoMembers(prev => prev.filter(m => m.user_id !== userId));
     setBoloesAdm(prev => prev.map(b => b.id === selectedBolao.id ? { ...b, memberCount: b.memberCount - 1 } : b));
     setSelectedBolao(prev => prev ? { ...prev, memberCount: prev.memberCount - 1 } : null);
