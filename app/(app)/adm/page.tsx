@@ -121,7 +121,7 @@ export default function AdmPage() {
     setBolaoMembersLoading(true);
     const { data } = await supabase
       .from("bolao_members")
-      .select("user_id, pts, cravadas, paid, profiles(name)")
+      .select("user_id, pts, cravadas, paid, profiles!bolao_members_user_id_fkey(name)")
       .eq("bolao_id", b.id)
       .order("pts", { ascending: false });
     setBolaoMembers((data ?? []) as unknown as BolaoMemberRow[]);
