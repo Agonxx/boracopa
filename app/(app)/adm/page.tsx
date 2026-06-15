@@ -104,6 +104,16 @@ export default function AdmPage() {
   const [bolaoMembers, setBolaoMembers] = useState<BolaoMemberRow[]>([]);
   const [bolaoMembersLoading, setBolaoMembersLoading] = useState(false);
   const [predUser, setPredUser] = useState<{ id: string; name: string } | null>(null);
+  const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
+
+  async function handleRemoveMember(userId: string) {
+    if (!selectedBolao) return;
+    await supabase.from("bolao_members").delete().eq("bolao_id", selectedBolao.id).eq("user_id", userId);
+    setBolaoMembers(prev => prev.filter(m => m.user_id !== userId));
+    setBoloesAdm(prev => prev.map(b => b.id === selectedBolao.id ? { ...b, memberCount: b.memberCount - 1 } : b));
+    setSelectedBolao(prev => prev ? { ...prev, memberCount: prev.memberCount - 1 } : null);
+    setConfirmRemove(null);
+  }
 
   async function fetchBoloesAdm() {
     setBoloesAdmLoading(true);
@@ -311,7 +321,7 @@ export default function AdmPage() {
       {/* main tabs */}
       <div style={{ display: "flex", gap: 4, background: "var(--surface)", border: "1px solid var(--line-strong)", borderRadius: 14, padding: 4 }}>
         {(["jogos", "usuarios"] as const).map(t => (
-          <button key={t} onClick={() => setMainTab(t)} style={{ flex: 1, padding: "9px 14px", borderRadius: 10, border: "none", cursor: "pointer", fontFamily: "Archivo, sans-serif", fontWeight: 800, fontSize: 14, background: mainTab === t ? "var(--ink)" : "transparent", color: mainTab === t ? "var(--surface)" : "var(--ink-2)", transition: "all .12s" }}>
+          <button key={t} onClick={() => { setMainTab(t); if (t === "usuarios") { fetchUsers(); fetchBoloesAdm(); } }} style={{ flex: 1, padding: "9px 14px", borderRadius: 10, border: "none", cursor: "pointer", fontFamily: "Archivo, sans-serif", fontWeight: 800, fontSize: 14, background: mainTab === t ? "var(--ink)" : "transparent", color: mainTab === t ? "var(--surface)" : "var(--ink-2)", transition: "all .12s" }}>
             {t === "jogos" ? "Jogos" : "Usuários"}
           </button>
         ))}
@@ -771,7 +781,7 @@ export default function AdmPage() {
           {/* modal membros do bolão */}
           {selectedBolao && (
             <div style={{ position: "fixed", inset: 0, zIndex: 60, display: "grid", placeItems: "center", padding: 16 }}>
-              <div onClick={() => setSelectedBolao(null)} style={{ position: "absolute", inset: 0, background: "rgba(20,18,14,.55)" }} />
+              <div onClick={() => { setSelectedBolao(null); setConfirmRemove(null); }} style={{ position: "absolute", inset: 0, background: "rgba(20,18,14,.55)" }} />
               <div style={{ position: "relative", width: "100%", maxWidth: 460, background: "var(--app-bg)", borderRadius: 22, overflow: "hidden", boxShadow: "0 30px 80px -20px rgba(0,0,0,.5)", maxHeight: "80vh", display: "flex", flexDirection: "column" }}>
                 {/* header */}
                 <div style={{ padding: "16px 18px 14px", borderBottom: "1px solid var(--line)", flexShrink: 0, display: "flex", alignItems: "center", gap: 10 }}>
@@ -781,7 +791,7 @@ export default function AdmPage() {
                       {selectedBolao.memberCount} participante{selectedBolao.memberCount !== 1 ? "s" : ""} · código <span style={{ fontFamily: "monospace" }}>{selectedBolao.invite_code}</span>
                     </p>
                   </div>
-                  <button onClick={() => setSelectedBolao(null)} style={{ width: 30, height: 30, borderRadius: "50%", border: "1px solid var(--line-strong)", background: "var(--surface)", cursor: "pointer", display: "grid", placeItems: "center", flexShrink: 0 }}>
+                  <button onClick={() => { setSelectedBolao(null); setConfirmRemove(null); }} style={{ width: 30, height: 30, borderRadius: "50%", border: "1px solid var(--line-strong)", background: "var(--surface)", cursor: "pointer", display: "grid", placeItems: "center", flexShrink: 0 }}>
                     <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="var(--ink-2)" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
                   </button>
                 </div>
@@ -811,6 +821,17 @@ export default function AdmPage() {
                           <span style={{ fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 20, background: m.paid ? "var(--primary-soft)" : "var(--app-bg)", color: m.paid ? "var(--primary-strong)" : "var(--ink-3)", border: `1px solid ${m.paid ? "var(--primary-strong)" : "var(--line-strong)"}` }}>
                             {m.paid ? "pago" : "pendente"}
                           </span>
+                          {confirmRemove === m.user_id ? (
+                            <>
+                              <span style={{ fontSize: 11, fontWeight: 700, color: "var(--ink-2)" }}>Remover?</span>
+                              <button onClick={() => handleRemoveMember(m.user_id)} style={{ height: 24, padding: "0 8px", borderRadius: 8, border: "none", background: "#e74c3c", color: "#fff", fontFamily: "Archivo, sans-serif", fontWeight: 800, fontSize: 11, cursor: "pointer" }}>Sim</button>
+                              <button onClick={() => setConfirmRemove(null)} style={{ height: 24, padding: "0 8px", borderRadius: 8, border: "1.5px solid var(--line-strong)", background: "transparent", fontFamily: "Archivo, sans-serif", fontWeight: 700, fontSize: 11, color: "var(--ink-2)", cursor: "pointer" }}>Não</button>
+                            </>
+                          ) : (
+                            <button onClick={() => setConfirmRemove(m.user_id)} style={{ width: 24, height: 24, borderRadius: "50%", border: "1.5px solid var(--line-strong)", background: "transparent", cursor: "pointer", display: "grid", placeItems: "center", color: "var(--ink-3)", flexShrink: 0 }} title="Remover do bolão">
+                              <svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                            </button>
+                          )}
                         </div>
                       </div>
                     );
