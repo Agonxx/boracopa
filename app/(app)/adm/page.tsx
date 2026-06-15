@@ -65,12 +65,12 @@ export default function AdmPage() {
     e.preventDefault();
     if (!manualPred.userId || !manualPred.matchId || manualPred.scoreA === "" || manualPred.scoreB === "") return;
     setManualSaving(true);
-    const { error } = await supabase.from("predictions").upsert({
-      user_id: manualPred.userId,
-      match_id: manualPred.matchId,
-      score_a: parseInt(manualPred.scoreA),
-      score_b: parseInt(manualPred.scoreB),
-    }, { onConflict: "user_id,match_id" });
+    const { error } = await supabase.rpc("admin_upsert_prediction", {
+      p_user_id: manualPred.userId,
+      p_match_id: manualPred.matchId,
+      p_score_a: parseInt(manualPred.scoreA),
+      p_score_b: parseInt(manualPred.scoreB),
+    });
     if (!error) {
       const match = matches.find(m => m.id === manualPred.matchId);
       if (match?.status === "finished") {
