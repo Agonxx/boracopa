@@ -5,6 +5,7 @@ import Flag from "./Flag";
 import { createClient } from "@/lib/supabase/client";
 import { X } from "lucide-react";
 import type { Match } from "@/lib/mock";
+import { useBolaoStore } from "@/store/bolao";
 
 interface PredRow {
   score_a: number; score_b: number;
@@ -122,6 +123,7 @@ export default function MatchCard({ m, compact, knockout, onSave }: { m: Match; 
   );
   const [saving, setSaving] = useState(false);
   const supabase = createClient();
+  const { activeBolaoId } = useBolaoStore();
   const [showPreds, setShowPreds] = useState(false);
   const [preds, setPreds] = useState<PredRow[]>([]);
   const [predsLoading, setPredsLoading] = useState(false);
@@ -141,11 +143,37 @@ export default function MatchCard({ m, compact, knockout, onSave }: { m: Match; 
     setShowPreds(true);
     if (preds.length > 0) return;
     setPredsLoading(true);
-    const { data } = await supabase
+
+    // Busca user_ids do bolão ativo para filtrar
+    const memberIds: string[] = [];
+    if (activeBolaoId) {
+      const { data: members } = await supabase
+        .from("bolao_members")
+        .select("user_id")
+        .eq("bolao_id", activeBolaoId);
+      memberIds.push(...(members ?? []).map((mb: any) => mb.user_id));
+    }
+
+    const query = supabase
       .from("predictions")
       .select("score_a, score_b, profiles(name)")
       .eq("match_id", String(m.id));
-    setPreds((data ?? []) as unknown as PredRow[]);
+
+    if (memberIds.length > 0) query.in("user_id", memberIds);
+
+    const { data } = await query;
+    let rows = (data ?? []) as unknown as PredRow[];
+
+    // Ordena: cravada → acerto → errou (só quando partida finalizada)
+    if (m.finished && m.score[0] != null && m.score[1] != null) {
+      const order = { cravada: 0, acerto: 1, errou: 2 };
+      rows = [...rows].sort((a, b) =>
+        order[calcResultType([a.score_a, a.score_b], [m.score[0]!, m.score[1]!])] -
+        order[calcResultType([b.score_a, b.score_b], [m.score[0]!, m.score[1]!])]
+      );
+    }
+
+    setPreds(rows);
     setPredsLoading(false);
   }
   const filled = a != null && b != null;
