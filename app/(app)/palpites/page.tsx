@@ -201,14 +201,21 @@ export default function PalpitesPage() {
         </span>
       </div>
 
-      <div><Segmented items={phaseTabs} value={phase} onChange={setPhase} /></div>
-
-      {isDate ? (
-        <>
-          {/* filtro pendentes */}
+      <div style={{
+        position: "sticky", top: 0, zIndex: 10,
+        margin: isDesktop ? "0 -30px" : "0 -16px",
+        padding: isDesktop ? "10px 30px 10px" : "8px 16px 8px",
+        background: "color-mix(in srgb, var(--app-bg) 90%, transparent)",
+        backdropFilter: "blur(10px)",
+        WebkitBackdropFilter: "blur(10px)",
+        borderBottom: "1px solid var(--line)",
+        display: "flex", flexDirection: "column", gap: 8,
+      } as React.CSSProperties}>
+        <Segmented items={phaseTabs} value={phase} onChange={setPhase} />
+        {isDate && (
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
             <button onClick={() => setPendingOnly(v => !v)} style={{
-              height: 32, padding: "0 14px", borderRadius: 20, cursor: "pointer",
+              height: 30, padding: "0 14px", borderRadius: 20, cursor: "pointer",
               border: `1.5px solid ${pendingOnly ? "var(--primary-strong)" : "var(--line-strong)"}`,
               background: pendingOnly ? "var(--primary-soft)" : "var(--surface)",
               color: pendingOnly ? "var(--primary-strong)" : "var(--ink-3)",
@@ -217,6 +224,11 @@ export default function PalpitesPage() {
               {pendingOnly ? "✓ Só pendentes" : "Só pendentes"}
             </button>
           </div>
+        )}
+      </div>
+
+      {isDate ? (
+        <>
 
           {loading ? (
             <div style={{ display: "grid", gridTemplateColumns: isDesktop ? "1fr 1fr" : "1fr", gap: isDesktop ? 16 : 12 }}>
