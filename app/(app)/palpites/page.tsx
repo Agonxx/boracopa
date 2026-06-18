@@ -119,7 +119,7 @@ export default function PalpitesPage() {
   const isDesktop = useIsDesktop();
   const supabase = createClient();
 
-  const [phase, setPhase] = useState("grupos");
+  const [phase, setPhase] = useState("pordata");
   const [pendingOnly, setPendingOnly] = useState(false);
   const phaseTabs = user?.isSuperAdmin ? PHASE_TABS_ALL : [PHASE_TABS_ALL[0], PHASE_TABS_ALL[2]];
   const [group, setGroup] = useState("A");
