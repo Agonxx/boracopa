@@ -131,14 +131,23 @@ export default function RankingPage() {
         const resultMap = Object.fromEntries(
           finishedMatches.map((m) => [m.id, { ra: m.result_a, rb: m.result_b }])
         );
-        const { data: preds } = await supabase
-          .from("predictions")
-          .select("user_id, match_id, score_a, score_b")
-          .in("user_id", userIds)
-          .in("match_id", matchIds)
-          .limit(10000);
+        const allPreds: Array<{ user_id: string; match_id: string; score_a: number; score_b: number }> = [];
+        let from = 0;
+        const PAGE = 1000;
+        while (true) {
+          const { data: page } = await supabase
+            .from("predictions")
+            .select("user_id, match_id, score_a, score_b")
+            .in("user_id", userIds)
+            .in("match_id", matchIds)
+            .range(from, from + PAGE - 1);
+          if (!page || page.length === 0) break;
+          allPreds.push(...page);
+          if (page.length < PAGE) break;
+          from += PAGE;
+        }
 
-        for (const p of preds ?? []) {
+        for (const p of allPreds) {
           const r = resultMap[p.match_id];
           if (!r || r.ra === null || r.rb === null) continue;
           const cravada = p.score_a === r.ra && p.score_b === r.rb;
