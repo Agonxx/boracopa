@@ -164,12 +164,17 @@ export default function MatchCard({ m, compact, knockout, onSave }: { m: Match; 
     const { data } = await query;
     let rows = (data ?? []) as unknown as PredRow[];
 
-    // Ordena: cravada → acerto → errou (só quando partida finalizada)
     if (m.finished && m.score[0] != null && m.score[1] != null) {
-      const order = { cravada: 0, acerto: 1, errou: 2 };
-      rows = [...rows].sort((a, b) =>
-        order[calcResultType([a.score_a, a.score_b], [m.score[0]!, m.score[1]!])] -
-        order[calcResultType([b.score_a, b.score_b], [m.score[0]!, m.score[1]!])]
+      const pts = { cravada: 5, acerto: 3, errou: 0 };
+      rows = [...rows].sort((ra, rb) => {
+        const diff = pts[calcResultType([rb.score_a, rb.score_b], [m.score[0]!, m.score[1]!])] -
+                     pts[calcResultType([ra.score_a, ra.score_b], [m.score[0]!, m.score[1]!])];
+        if (diff !== 0) return diff;
+        return (ra.profiles?.name ?? "").localeCompare(rb.profiles?.name ?? "", "pt-BR");
+      });
+    } else {
+      rows = [...rows].sort((ra, rb) =>
+        (ra.profiles?.name ?? "").localeCompare(rb.profiles?.name ?? "", "pt-BR")
       );
     }
 
