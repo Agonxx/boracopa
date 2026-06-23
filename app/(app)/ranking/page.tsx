@@ -122,24 +122,32 @@ export default function RankingPage() {
 
       const { data: finishedMatches } = await supabase
         .from("matches")
-        .select("id")
+        .select("id, result_a, result_b")
         .eq("status", "finished")
         .in("phase", phaseFilter);
 
       if (finishedMatches && finishedMatches.length > 0) {
         const matchIds = finishedMatches.map((m) => m.id);
+        const resultMap = Object.fromEntries(
+          finishedMatches.map((m) => [m.id, { ra: m.result_a, rb: m.result_b }])
+        );
         const { data: preds } = await supabase
           .from("predictions")
-          .select("user_id, points")
+          .select("user_id, match_id, score_a, score_b")
           .in("user_id", userIds)
           .in("match_id", matchIds)
           .limit(10000);
 
         for (const p of preds ?? []) {
-          const pts = p.points ?? 0;
+          const r = resultMap[p.match_id];
+          if (!r || r.ra === null || r.rb === null) continue;
+          const cravada = p.score_a === r.ra && p.score_b === r.rb;
+          const win = (a: number, b: number) => (a > b ? 1 : a < b ? -1 : 0);
+          const acerto = win(p.score_a, p.score_b) === win(r.ra, r.rb);
+          const pts = cravada ? 5 : acerto ? 3 : 0;
           if (!ptsByUser[p.user_id]) ptsByUser[p.user_id] = { pts: 0, cravadas: 0 };
           ptsByUser[p.user_id].pts += pts;
-          if (pts === 5) ptsByUser[p.user_id].cravadas += 1;
+          if (cravada) ptsByUser[p.user_id].cravadas += 1;
         }
       }
       for (const uid of userIds) {
