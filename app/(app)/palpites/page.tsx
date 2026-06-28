@@ -209,7 +209,7 @@ export default function PalpitesPage() {
 
   const [phase, setPhase] = useState("pordata");
   const [pendingOnly, setPendingOnly] = useState(false);
-  const phaseTabs = user?.isSuperAdmin ? PHASE_TABS_ALL : [PHASE_TABS_ALL[0], PHASE_TABS_ALL[2]];
+  const phaseTabs = PHASE_TABS_ALL;
   const [group, setGroup] = useState("A");
   const [round, setRound] = useState<string | null>(null);
   const [matches, setMatches] = useState<DbMatch[]>([]);
