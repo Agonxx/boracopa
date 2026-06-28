@@ -48,7 +48,7 @@ interface DbMatch {
 }
 
 interface Prediction {
-  match_id: string; score_a: number; score_b: number; advance_code?: string | null;
+  match_id: string; score_a: number; score_b: number;
 }
 
 function buildDateGroups(allMatches: DbMatch[], predMap: Record<string, Prediction>) {
@@ -100,7 +100,7 @@ function toCardMatch(m: DbMatch, pred?: Prediction) {
     score: (finished ? [m.result_a, m.result_b] : [pred?.score_a ?? null, pred?.score_b ?? null]) as [number | null, number | null],
     done: locked,
     upcoming: m.status === "upcoming",
-    advance: pred?.advance_code ?? undefined,
+    advance: undefined,
     deadline: computeDeadline(m.match_date, m.status),
     editUntil: finished ? "—" : undefined,
     finished,
@@ -221,7 +221,7 @@ export default function PalpitesPage() {
     setLoading(true);
     const [{ data: matchData }, { data: predData }] = await Promise.all([
       supabase.from("matches").select("*").order("match_date"),
-      supabase.from("predictions").select("match_id,score_a,score_b,advance_code").eq("user_id", user.id),
+      supabase.from("predictions").select("match_id,score_a,score_b").eq("user_id", user.id),
     ]);
     setMatches((matchData as DbMatch[]) ?? []);
     setPredictions((predData as Prediction[]) ?? []);
@@ -484,7 +484,7 @@ export default function PalpitesPage() {
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: isDesktop ? "1fr 1fr" : "1fr", gap: isDesktop ? 16 : 12, alignItems: "start" }}>
               {cardMatches.map(m => (
-                <MatchCard key={m.id} m={m} compact={!isDesktop} knockout
+                <MatchCard key={m.id} m={m} compact={!isDesktop}
                   onSave={(a, b) => savePrediction(m.id, a, b)} />
               ))}
             </div>

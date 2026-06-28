@@ -73,33 +73,6 @@ function TeamRow({ t, value, onChange, locked }: { t: Team; value: number | null
 
 type Team = { n: string; c: string };
 
-/* ── Advance selector (knockout tie) ── */
-function AdvanceSelector({ a, b, value, onChange }: { a: Team; b: Team; value: string | null; onChange: (v: string) => void }) {
-  const opt = (t: Team) => {
-    const on = value === t.c;
-    return (
-      <button key={t.c} onClick={() => onChange(t.c)} style={{
-        display: "flex", alignItems: "center", gap: 6, padding: "5px 10px 5px 6px",
-        borderRadius: 30, cursor: "pointer",
-        border: on ? "1.6px solid var(--primary-strong)" : "1px solid var(--line-strong)",
-        background: on ? "var(--primary-soft)" : "var(--surface)",
-        color: on ? "var(--primary-strong)" : "var(--ink-2)",
-        fontWeight: 700, fontSize: 12.5,
-      }}>
-        <Flag code={t.c} size={18} /> {t.n}
-      </button>
-    );
-  };
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8, background: "var(--app-bg)", borderRadius: 13, padding: "10px 11px", border: "1.4px dashed var(--line-strong)" }}>
-      <span style={{ fontSize: 11.5, fontWeight: 700, color: "var(--ink-2)", display: "flex", alignItems: "center", gap: 6 }}>
-        <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--live)", display: "inline-block" }} />
-        Empate — quem avança nos pênaltis?
-      </span>
-      <div style={{ display: "flex", gap: 8 }}>{opt(a)}{opt(b)}</div>
-    </div>
-  );
-}
 
 function calcResultType(pred: [number, number], result: [number, number]): "cravada" | "acerto" | "errou" {
   if (pred[0] === result[0] && pred[1] === result[1]) return "cravada";
@@ -114,10 +87,9 @@ const RESULT_STYLE = {
   errou:   { bg: "var(--app-bg)", color: "var(--ink-3)", label: "Errou",   pts: "0 pts"  },
 };
 
-export default function MatchCard({ m, compact, knockout, onSave }: { m: Match; compact?: boolean; knockout?: boolean; onSave?: (a: number, b: number) => void }) {
+export default function MatchCard({ m, compact, onSave }: { m: Match; compact?: boolean; onSave?: (a: number, b: number) => void }) {
   const [a, setA] = useState<number | null>(m.score[0]);
   const [b, setB] = useState<number | null>(m.score[1]);
-  const [adv, setAdv] = useState<string | null>(m.advance || null);
   const [confirmed, setConfirmed] = useState(
     m.done || (m.score[0] != null && m.score[1] != null)
   );
@@ -182,7 +154,6 @@ export default function MatchCard({ m, compact, knockout, onSave }: { m: Match; 
     setPredsLoading(false);
   }
   const filled = a != null && b != null;
-  const tie = filled && a === b;
   const urgent = m.deadline?.urgent;
   const locked = m.done;
   const sz = 40;
@@ -218,7 +189,7 @@ export default function MatchCard({ m, compact, knockout, onSave }: { m: Match; 
   <>
     <div style={{
       background: "var(--surface)", borderRadius: 20, padding: "14px 16px 16px",
-      border: tie && knockout && !locked ? "1.5px solid var(--primary-strong)" : "1px solid var(--line)",
+      border: "1px solid var(--line)",
       boxShadow: "0 1px 2px rgba(26,24,20,.04), 0 8px 24px -16px rgba(26,24,20,.4)",
       display: "flex", flexDirection: "column", gap: 12, flexShrink: 0, opacity: locked ? 0.92 : 1,
     }}>
@@ -257,11 +228,6 @@ export default function MatchCard({ m, compact, knockout, onSave }: { m: Match; 
             <span style={{ ...teamName, fontSize: 15, textAlign: "right" }}>{m.b.n}</span><Flag code={m.b.c} size={28} />
           </div>
         </div>
-      )}
-
-      {/* knockout tie → advance selector */}
-      {knockout && !locked && tie && (
-        <AdvanceSelector a={m.a} b={m.b} value={adv} onChange={setAdv} />
       )}
 
       {/* footer */}
