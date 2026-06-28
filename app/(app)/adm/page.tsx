@@ -14,9 +14,11 @@ interface Match {
 
 const PHASES = [
   { v: "groups",  l: "Fase de grupos" },
+  { v: "r32",     l: "16 avos de final" },
   { v: "r16",     l: "Oitavas de final" },
   { v: "quarter", l: "Quartas de final" },
   { v: "semi",    l: "Semifinal" },
+  { v: "third",   l: "Terceiro lugar" },
   { v: "final",   l: "Final" },
 ];
 const GROUPS = ["A","B","C","D","E","F","G","H","I","J","K","L"];

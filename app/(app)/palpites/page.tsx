@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo, Fragment } from "react";
 import MatchCard from "@/components/match/MatchCard";
 import Segmented from "@/components/ui/Segmented";
 import ScoringNote from "@/components/match/ScoringNote";
 import Skeleton from "@/components/ui/Skeleton";
-import BracketPeek from "@/components/match/BracketPeek";
 import { useAuthStore } from "@/store/auth";
 import { createClient } from "@/lib/supabase/client";
 import type { Match } from "@/lib/mock";
@@ -22,22 +21,24 @@ function useIsDesktop() {
 }
 
 const GROUP_KEYS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
+
 const KO_ROUNDS = [
-  { key: "oitavas", label: "Oitavas" },
-  { key: "quartas", label: "Quartas" },
-  { key: "semi", label: "Semifinal" },
-  { key: "final", label: "Final" },
-];
+  { key: "r32",     label: "16-avos", title: "16 avos de final",  chipPrefix: "16-avo",  phases: ["r32"] },
+  { key: "r16",     label: "Oitavas", title: "Oitavas de final",  chipPrefix: "Oitava",  phases: ["r16"] },
+  { key: "quarter", label: "Quartas", title: "Quartas de final",  chipPrefix: "Quarta",  phases: ["quarter"] },
+  { key: "semi",    label: "Semi",    title: "Semifinal",          chipPrefix: "Semi",    phases: ["semi"] },
+  { key: "final",   label: "Final",   title: "Final",              chipPrefix: null,      phases: ["third", "final"] },
+] as const;
+
 const PHASE_TABS_ALL = [
-  { key: "grupos", label: "Fase de grupos" },
-  { key: "matamata", label: "Mata-mata" },
-  { key: "pordata", label: "Por data" },
+  { key: "grupos",    label: "Fase de grupos" },
+  { key: "matamata",  label: "Mata-mata" },
+  { key: "pordata",   label: "Por data" },
 ];
-const KO_DB_PHASE: Record<string, string> = {
-  oitavas: "r16", quartas: "quarter", semi: "semi", final: "final",
-};
+
 const PHASE_LABELS: Record<string, string> = {
-  r16: "Oitavas", quarter: "Quartas", semi: "Semifinal", final: "Final",
+  r32: "16-avos", r16: "Oitavas", quarter: "Quartas", semi: "Semifinal",
+  third: "3° Lugar", final: "Final",
 };
 
 interface DbMatch {
@@ -114,6 +115,93 @@ const chip: React.CSSProperties = {
   borderRadius: 7, padding: "3px 8px", lineHeight: 1, whiteSpace: "nowrap",
 };
 
+/* ── KO Timeline ── */
+type KORound = (typeof KO_ROUNDS)[number];
+
+function KOTimeline({ matches, value, onChange }: {
+  matches: DbMatch[];
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div style={{
+      background: "var(--surface)", border: "1px solid var(--line)",
+      borderRadius: 18, padding: "16px 20px", overflowX: "auto",
+    }}>
+      <div style={{ display: "flex", alignItems: "flex-start", minWidth: 380 }}>
+        {KO_ROUNDS.map((r, i) => {
+          const rMatches = matches.filter(m => (r.phases as readonly string[]).includes(m.phase));
+          const completed = rMatches.length > 0 && rMatches.every(m => m.status === "finished");
+          const active = !completed && rMatches.some(m => m.status !== "upcoming" && m.status !== "");
+          const openCount = rMatches.filter(m => m.status === "open").length;
+          const isSelected = r.key === value;
+
+          const prevR = i > 0 ? KO_ROUNDS[i - 1] : null;
+          const prevCompleted = prevR
+            ? matches.filter(m => (prevR.phases as readonly string[]).includes(m.phase))
+              .every(m => m.status === "finished") &&
+              matches.some(m => (prevR.phases as readonly string[]).includes(m.phase))
+            : false;
+          const prevHasAny = prevR
+            ? matches.some(m => (prevR.phases as readonly string[]).includes(m.phase))
+            : false;
+          const prevActive = prevR && !prevCompleted && matches.some(m =>
+            (prevR.phases as readonly string[]).includes(m.phase) && m.status !== "upcoming"
+          );
+
+          return (
+            <Fragment key={r.key}>
+              {i > 0 && (
+                <div style={{
+                  flex: 1, height: 2, marginTop: 17, alignSelf: "flex-start",
+                  background: (prevCompleted || prevActive) ? "var(--primary)" : "var(--line-strong)",
+                  transition: "background .2s",
+                }} />
+              )}
+              <button
+                onClick={() => onChange(r.key)}
+                style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5, background: "none", border: "none", cursor: "pointer", padding: "0 4px" }}
+              >
+                <div style={{
+                  width: 36, height: 36, borderRadius: "50%",
+                  display: "grid", placeItems: "center",
+                  background: completed ? "var(--ink)" : active ? "var(--primary)" : "var(--app-bg)",
+                  border: completed ? "none" : active ? "2.5px solid var(--primary-strong)" : "2px solid var(--line-strong)",
+                  boxShadow: isSelected ? `0 0 0 3px ${completed ? "rgba(26,24,20,.12)" : "var(--primary-soft)"}` : "none",
+                  transition: "box-shadow .15s",
+                  flexShrink: 0,
+                }}>
+                  {completed ? (
+                    <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M5 13l4 4 10-10" />
+                    </svg>
+                  ) : active ? (
+                    <div style={{ width: 10, height: 10, borderRadius: "50%", background: "white" }} />
+                  ) : (
+                    <span style={{ fontSize: 12, fontWeight: 800, color: "var(--ink-3)" }}>
+                      {rMatches.length > 0 ? rMatches.length : ""}
+                    </span>
+                  )}
+                </div>
+                <span style={{ fontSize: 12, fontWeight: 700, color: isSelected ? "var(--ink)" : "var(--ink-3)", whiteSpace: "nowrap" }}>
+                  {r.label}
+                </span>
+                <span style={{ fontSize: 10.5, fontWeight: 600, color: completed ? "var(--primary-strong)" : "var(--ink-3)", whiteSpace: "nowrap" }}>
+                  {completed
+                    ? `${rMatches.length}/${rMatches.length}`
+                    : active
+                      ? openCount > 0 ? `${openCount} em aberto` : "em andamento"
+                      : "aguarda"}
+                </span>
+              </button>
+            </Fragment>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export default function PalpitesPage() {
   const { user } = useAuthStore();
   const isDesktop = useIsDesktop();
@@ -123,7 +211,7 @@ export default function PalpitesPage() {
   const [pendingOnly, setPendingOnly] = useState(false);
   const phaseTabs = user?.isSuperAdmin ? PHASE_TABS_ALL : [PHASE_TABS_ALL[0], PHASE_TABS_ALL[2]];
   const [group, setGroup] = useState("A");
-  const [round, setRound] = useState("oitavas");
+  const [round, setRound] = useState<string | null>(null);
   const [matches, setMatches] = useState<DbMatch[]>([]);
   const [predictions, setPredictions] = useState<Prediction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -142,6 +230,11 @@ export default function PalpitesPage() {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  // Reset round selection when leaving mata-mata (so auto-select fires again on re-entry)
+  useEffect(() => {
+    if (phase !== "matamata") setRound(null);
+  }, [phase]);
+
   useEffect(() => {
     if (phase !== "pordata" || loading) return;
     const today = new Date();
@@ -151,6 +244,20 @@ export default function PalpitesPage() {
       if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
     }, 100);
   }, [phase, loading]);
+
+  // Auto-select first KO round with open matches
+  const autoRound = useMemo(() => {
+    const firstActive = KO_ROUNDS.find(r =>
+      matches.some(m => (r.phases as readonly string[]).includes(m.phase) && m.status === "open")
+    );
+    if (firstActive) return firstActive.key;
+    const firstWithMatches = KO_ROUNDS.find(r =>
+      matches.some(m => (r.phases as readonly string[]).includes(m.phase))
+    );
+    return firstWithMatches?.key ?? "r32";
+  }, [matches]);
+
+  const effectiveRound = round ?? autoRound;
 
   async function savePrediction(matchId: string, scoreA: number, scoreB: number) {
     if (!user) return;
@@ -173,18 +280,42 @@ export default function PalpitesPage() {
   const isDate = phase === "pordata";
   const predMap = Object.fromEntries(predictions.map(p => [p.match_id, p]));
 
-  const visibleMatches = isDate
+  const activeKORound = KO_ROUNDS.find(r => r.key === effectiveRound);
+
+  const rawVisible = isDate
     ? []
     : isKO
-      ? matches.filter(m => m.phase === KO_DB_PHASE[round])
+      ? matches.filter(m => (activeKORound?.phases as readonly string[] ?? []).includes(m.phase))
       : matches.filter(m => m.phase === "groups" && m.group_name === group);
 
-  const cardMatches = visibleMatches.map(m => toCardMatch(m, predMap[m.id]));
+  const visibleMatches = isKO
+    ? [...rawVisible].sort((a, b) => a.match_date.localeCompare(b.match_date))
+    : rawVisible;
+
+  const cardMatches = visibleMatches.map((m, idx) => {
+    const base = toCardMatch(m, predMap[m.id]);
+    if (!isKO || !activeKORound) return base;
+    let grp: string;
+    if (activeKORound.chipPrefix) {
+      grp = `${activeKORound.chipPrefix} ${idx + 1}`;
+    } else {
+      grp = m.phase === "third" ? "3° Lugar" : "Final";
+    }
+    return { ...base, grp };
+  });
+
   const open = cardMatches.filter(m => !m.done && !m.upcoming).length;
   const dateGroups = isDate ? buildDateGroups(matches, predMap) : [];
   const filteredDateGroups = pendingOnly
     ? dateGroups.map(g => ({ ...g, items: g.items.filter(m => m.status === "open" && !predMap[m.id]) })).filter(g => g.items.length > 0)
     : dateGroups;
+
+  // KO section header data
+  const koPredCount = visibleMatches.filter(m => predMap[m.id]).length;
+  const koTotal = visibleMatches.length;
+  const nextOpen = [...visibleMatches]
+    .filter(m => m.status === "open")
+    .sort((a, b) => a.match_date.localeCompare(b.match_date))[0];
 
   return (
     <div style={{
@@ -229,7 +360,6 @@ export default function PalpitesPage() {
 
       {isDate ? (
         <>
-
           {loading ? (
             <div style={{ display: "grid", gridTemplateColumns: isDesktop ? "1fr 1fr" : "1fr", gap: isDesktop ? 16 : 12 }}>
               {[...Array(6)].map((_, i) => (
@@ -311,24 +441,34 @@ export default function PalpitesPage() {
         </>
       ) : (
         <>
-          <div style={{
-            background: "var(--surface)", border: "1px solid var(--line)",
-            borderRadius: isDesktop ? 18 : 14, padding: isDesktop ? "16px 18px" : "12px 14px",
-          }}>
-            {!isDesktop && (
-              <span style={{ fontFamily: "Anton, sans-serif", fontSize: 11, letterSpacing: 1, color: "var(--ink-3)", textTransform: "uppercase", display: "block", marginBottom: 8 }}>
-                Chaveamento · deslize →
+          <KOTimeline matches={matches} value={effectiveRound} onChange={setRound} />
+
+          {/* Section header */}
+          <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
+            <div>
+              <h2 style={{ margin: "0 0 4px", fontFamily: "Anton, sans-serif", fontSize: isDesktop ? 26 : 20, letterSpacing: 0.3, color: "var(--ink)" }}>
+                {activeKORound?.title ?? "Mata-mata"}
+              </h2>
+              <span style={{ fontSize: 12.5, color: "var(--ink-3)", fontWeight: 600 }}>
+                {koTotal} jogo{koTotal !== 1 ? "s" : ""}
+                {nextOpen && ` · fecha ${formatMatchTime(nextOpen.match_date)}`}
               </span>
-            )}
-            {isDesktop && (
-              <div style={{ fontFamily: "Anton, sans-serif", fontSize: 12, letterSpacing: 1, color: "var(--ink-3)", textTransform: "uppercase", marginBottom: 10 }}>
-                Chaveamento
+            </div>
+            {koTotal > 0 && (
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 5 }}>
+                <span style={{ fontSize: 12, fontWeight: 700, color: "var(--primary-strong)" }}>
+                  {koPredCount}/{koTotal} palpitados
+                </span>
+                <div style={{ width: 100, height: 5, borderRadius: 10, background: "var(--line-strong)", overflow: "hidden" }}>
+                  <div style={{
+                    height: "100%",
+                    width: `${koTotal > 0 ? (koPredCount / koTotal) * 100 : 0}%`,
+                    background: "var(--primary)", borderRadius: 10, transition: "width .3s",
+                  }} />
+                </div>
               </div>
             )}
-            <BracketPeek focus={round} />
           </div>
-
-          <div><Segmented items={KO_ROUNDS} value={round} onChange={setRound} /></div>
 
           {loading ? (
             <div style={{ display: "grid", gridTemplateColumns: isDesktop ? "1fr 1fr" : "1fr", gap: isDesktop ? 16 : 12 }}>
