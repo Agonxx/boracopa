@@ -118,7 +118,7 @@ export default function RankingPage() {
     } else {
       const phaseFilter = filter === "Fase de grupos"
         ? ["groups"]
-        : ["r16", "quarter", "semi", "final"];
+        : ["r32", "r16", "quarter", "semi", "third", "final"];
 
       const { data: finishedMatches } = await supabase
         .from("matches")
