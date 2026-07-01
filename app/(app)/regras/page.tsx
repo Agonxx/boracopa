@@ -73,6 +73,29 @@ export default function RegrasPage() {
         </ul>
       </div>
 
+      {/* Mata-mata */}
+      <div style={card}>
+        <p style={label}>Mata-mata</p>
+        <p style={{ fontSize: 13.5, color: "var(--ink-2)", lineHeight: 1.6, margin: 0 }}>
+          Nos jogos eliminatórios, a pontuação é sobre o resultado ao fim do <strong>tempo regulamentar + prorrogação</strong> (antes dos pênaltis).
+        </p>
+        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {[
+            { label: "Cravada +5 pts", desc: "Acertou o placar exato ao fim do tempo regulamentar/prorrogação.", color: "var(--primary-strong)", bg: "var(--primary-soft)" },
+            { label: "Acerto +3 pts", desc: "Acertou quem venceu no tempo regulamentar/prorrogação, ou que o jogo foi para os pênaltis (empate após prorrogação).", color: "#2e7d32", bg: "#e8f5e9" },
+            { label: "Erro 0 pts", desc: "Resultado diferente do seu palpite.", color: "var(--ink-3)", bg: "var(--app-bg)" },
+          ].map(({ label: l, desc, color, bg }) => (
+            <div key={l} style={{ background: bg, borderRadius: 12, padding: "10px 14px", display: "flex", flexDirection: "column", gap: 3 }}>
+              <span style={{ fontFamily: "Anton, sans-serif", fontSize: 14, color }}>{l}</span>
+              <span style={{ fontSize: 12.5, color: "var(--ink-2)", lineHeight: 1.5 }}>{desc}</span>
+            </div>
+          ))}
+        </div>
+        <p style={{ fontSize: 12.5, color: "var(--ink-3)", margin: 0 }}>
+          Exemplo: jogo vai para prorrogação e termina 1×1. Quem palpitou 1×1 crava (+5). Quem palpitou 0×0 ou 2×2 acerta (+3, pois acertou o empate). Quem palpitou 2×1 erra (0).
+        </p>
+      </div>
+
       {/* Ranking */}
       <div style={card}>
         <p style={label}>Ranking</p>
