@@ -1,0 +1,46 @@
+import { createServerClient } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
+
+export async function proxy(request: NextRequest) {
+  let response = NextResponse.next({ request });
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() { return request.cookies.getAll(); },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+          response = NextResponse.next({ request });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
+
+  // Lê sessão do cookie — sem chamada de rede na maioria dos casos
+  const { data: { session } } = await supabase.auth.getSession();
+  const { pathname } = request.nextUrl;
+
+  // páginas públicas: acessíveis com ou sem login
+  const isPublicPage = pathname === "/reset-password" || pathname.startsWith("/convite/");
+  // páginas de auth: redireciona usuário logado pra home
+  const isAuthOnlyPage = pathname === "/login" || pathname === "/register";
+
+  if (!session && !isPublicPage && !isAuthOnlyPage) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+
+  if (session && isAuthOnlyPage) {
+    return NextResponse.redirect(new URL("/home", request.url));
+  }
+
+  return response;
+}
+
+export const config = {
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/).*)" ],
+};

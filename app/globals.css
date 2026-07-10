@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+:root {
+  --app-bg:       #f3f1ea;
+  --surface:      #ffffff;
+  --ink:          #1b1813;
+  --ink-2:        #6c665b;
+  --ink-3:        #aaa498;
+  --line:         rgba(27,24,19,0.08);
+  --line-strong:  rgba(27,24,19,0.17);
+
+  --primary:        oklch(0.62 0.15 150);
+  --primary-strong: oklch(0.50 0.13 152);
+  --primary-soft:   oklch(0.93 0.045 150);
+  --on-primary:     #ffffff;
+
+  --live:      oklch(0.72 0.17 58);
+  --live-soft: oklch(0.92 0.07 68);
+
+  --hero-bg:     #16271d;
+  --hero-ink:    #f4f1ea;
+  --hero-dim:    rgba(244,241,234,0.62);
+  --hero-stripe: rgba(255,255,255,0.05);
+
+  --flag-a: #d6d1c6;
+  --flag-b: #ece8df;
+}
+
+@theme inline {
+  --color-app-bg:       var(--app-bg);
+  --color-surface:      var(--surface);
+  --color-ink:          var(--ink);
+  --color-ink-2:        var(--ink-2);
+  --color-ink-3:        var(--ink-3);
+  --color-primary:      var(--primary);
+  --color-primary-strong: var(--primary-strong);
+  --color-primary-soft: var(--primary-soft);
+  --color-on-primary:   var(--on-primary);
+  --color-live:         var(--live);
+  --color-live-soft:    var(--live-soft);
+  --color-hero-bg:      var(--hero-bg);
+  --color-hero-ink:     var(--hero-ink);
+
+  --font-display: var(--font-anton);
+  --font-sans:    var(--font-archivo);
+}
+
+body {
+  background: var(--app-bg);
+  color: var(--ink);
+  font-family: var(--font-archivo), system-ui, sans-serif;
+}
+
+@keyframes sk {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.55; }
+}
+
+.pii {
+  transition: filter .15s ease;
+}
+html[data-privacy="on"] .pii {
+  filter: blur(6px);
+  user-select: none;
+}
