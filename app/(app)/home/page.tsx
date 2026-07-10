@@ -163,7 +163,7 @@ export default function HomePage() {
         <div>
           <div style={{ fontSize: 13, fontWeight: 700, color: "var(--ink-2)" }}>Boa tarde,</div>
           <h1 style={{ margin: 0, fontFamily: "Anton, sans-serif", fontSize: 28, letterSpacing: 0.3, lineHeight: 1 }}>
-            {firstName}, BORA PALPITAR
+            <span className="pii">{firstName}</span>, BORA PALPITAR
           </h1>
         </div>
       )}

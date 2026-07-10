@@ -143,7 +143,7 @@ export default function BolaoDetailPage() {
               <div>
                 <p style={{ fontSize: 11, fontWeight: 700, color: "var(--ink-3)", textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 2 }}>PIX</p>
                 <p style={{ fontSize: 14, fontWeight: 700, color: "var(--ink)" }}>{bolao.pix_key}</p>
-                {bolao.pix_name && <p style={{ fontSize: 12, color: "var(--ink-2)", fontWeight: 600 }}>{bolao.pix_name}</p>}
+                {bolao.pix_name && <p className="pii" style={{ fontSize: 12, color: "var(--ink-2)", fontWeight: 600 }}>{bolao.pix_name}</p>}
               </div>
               <CopyButton text={bolao.pix_key} label="Copiar PIX" />
             </div>
@@ -191,6 +191,7 @@ export default function BolaoDetailPage() {
               <div
                 onClick={e => { e.stopPropagation(); setPredUser({ id: m.user_id, name: m.profiles?.name ?? "Usuário" }); }}
                 title="Ver palpites"
+                className="pii"
                 style={{
                   width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
                   background: isMe ? "rgba(255,255,255,.25)" : "var(--app-bg)",
@@ -205,7 +206,7 @@ export default function BolaoDetailPage() {
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                  <span style={{ fontSize: 14, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  <span className="pii" style={{ fontSize: 14, fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {m.profiles?.name ?? "Usuário"}
                   </span>
                   {isMe && <span style={{ fontSize: 11, fontWeight: 600, opacity: 0.8 }}>· você</span>}
